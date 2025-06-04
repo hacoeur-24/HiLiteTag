@@ -191,7 +191,7 @@ type TagDefinition = {
 - `defaultTag?: TagDefinition` (required if `autoTag` is true)
 - `autoWordBoundaries?: boolean`
 - `autoTag?: boolean`
-- `overlapTag?: boolean`
+- `overlapTag?: boolean` --experimental (not stable)
 - `selectedMarkerId?: string | null` (for selected color logic)
 - `children: React.ReactNode`
 
