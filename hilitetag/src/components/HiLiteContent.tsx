@@ -1,9 +1,12 @@
 import React, { useImperativeHandle, useRef, forwardRef, useEffect } from "react";
 import { wrapRangeWithMarkers } from "@/core/wrapRangeWithMarkers";
 import { expandRangeToWordBoundaries } from "@/core/selectionUtils";
+import type { HiLiteTags, TagDefinition } from "@/core/tags";
 
 type HiLiteContentProps = {
   children: React.ReactNode;
+  tags: HiLiteTags;
+  defaultTag?: TagDefinition;
   autoWordBoundaries?: boolean;
   autoTag?: boolean;
   overlapTag?: boolean;
@@ -11,6 +14,8 @@ type HiLiteContentProps = {
 
 export const HiLiteContent = forwardRef(({ 
   children, 
+  tags,
+  defaultTag,
   autoWordBoundaries, 
   autoTag,
   overlapTag 
@@ -18,7 +23,8 @@ export const HiLiteContent = forwardRef(({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Core highlighting logic for both manual and auto tag
-  const performHighlight = () => {
+  const performHighlight = (tag?: TagDefinition) => {
+    if (!tag) return;
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) {
       let range = sel.getRangeAt(0);
@@ -26,33 +32,37 @@ export const HiLiteContent = forwardRef(({
         if (autoWordBoundaries) {
           range = expandRangeToWordBoundaries(range);
         }
-        wrapRangeWithMarkers(range, containerRef.current, !!overlapTag);
+        wrapRangeWithMarkers(range, containerRef.current, !!overlapTag, tag);
       }
     }
   };
 
   // Expose highlightSelection via ref
   useImperativeHandle(ref, () => ({
-    highlightSelection: () => {
-      performHighlight();
+    highlightSelection: (tag?: TagDefinition) => {
+      performHighlight(tag || defaultTag);
     }
   }));
 
   // Auto-tagging: listen for mouseup events to trigger highlight automatically
   useEffect(() => {
     if (!autoTag) return;
+    if (!defaultTag) {
+      console.warn("autoTag is enabled but no defaultTag provided");
+      return;
+    }
     const container = containerRef.current;
     if (!container) return;
 
     const handleAutoTag = () => {
-      performHighlight();
+      performHighlight(defaultTag);
     };
 
     container.addEventListener("mouseup", handleAutoTag);
     return () => {
       container.removeEventListener("mouseup", handleAutoTag);
     };
-  }, [autoTag, autoWordBoundaries]);
+  }, [autoTag, autoWordBoundaries, defaultTag]);
 
   return <div ref={containerRef}>{children}</div>;
 });

@@ -1,11 +1,13 @@
 import { nanoid } from "nanoid";
+import type { TagDefinition } from "@/core/tags";
 
 export function wrapRangeWithMarkers(
   range: Range,
   root: HTMLElement,
-  allowOverlap: boolean
+  allowOverlap: boolean,
+  tag: TagDefinition
 ) {
-  const tagId = nanoid(6);
+  const tagId = tag.id || nanoid(8);
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 
   // Phase 1: Collect all text nodes within the range and their offsets
@@ -49,6 +51,11 @@ export function wrapRangeWithMarkers(
     const span = document.createElement("span");
     span.setAttribute("data-tag-id", tagId);
     span.className = "marker";
+    // Apply tag color and custom style
+    span.style.background = tag.color;
+    if (tag.style) {
+      Object.assign(span.style, tag.style);
+    }
 
     // If this is the first segment, give it a "marker-start" class
     if (idx === 0) {
