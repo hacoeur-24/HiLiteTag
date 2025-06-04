@@ -48,6 +48,18 @@ export const HiLiteContent = forwardRef(({
         const textNode = document.createTextNode(span.textContent || "");
         span.replaceWith(textNode);
       });
+    },
+    getAllTags: () => {
+      if (!containerRef.current) return [];
+      const spans = containerRef.current.querySelectorAll('span.marker');
+      return Array.from(spans).map(span => ({
+        markerId: span.getAttribute('data-marker-id'),
+        tagId: span.getAttribute('data-tag-id'),
+        text: span.textContent,
+        isStart: span.classList.contains('marker-start'),
+        isEnd: span.classList.contains('marker-end'),
+        // Optionally, you can add more context here
+      }));
     }
   }));
 

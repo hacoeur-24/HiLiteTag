@@ -55,11 +55,18 @@ function App() {
       <button onClick={() => ref.current?.highlightTag(tags.getByName("tag1"))}>Highlight as tag1</button>
       <button onClick={() => ref.current?.highlightTag(tags.getByName("tag2"))}>Highlight as tag2</button>
       <button onClick={handleRemoveTag} disabled={!selectedMarkerId}>Remove Selected Tag</button>
+      <button onClick={() => {
+        const tags = ref.current?.getAllTags();
+        if (tags) {
+          // For demo: log to console, but you can send to your API/DB
+          console.log("All tags:", tags);
+          alert(JSON.stringify(tags, null, 2));
+        }
+      }}>Get All Tags</button>
       <HiLiteContent
         ref={ref}
         tags={tags}
         autoWordBoundaries
-        autoTag
         defaultTag={tags.getByName("tag2")}
       >
         <div onClick={handleTagClick} style={{ cursor: "pointer" }}>
