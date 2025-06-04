@@ -8,8 +8,9 @@
 .marker {
   background: rgba(255, 255, 0, 0.4);
   padding: 0.1em 0.2em;
-  border-radius: 0; /* Remove default rounding; start/end classes handle corners */
-  margin: 0; /* Remove any negative margin */
+  border-radius: 0;
+  margin: 0;
+  position: relative;
 }
 
 h1, p {
@@ -17,13 +18,12 @@ h1, p {
 }
 
 /* Rounded corners only on the first and last highlight segments */
-.marker-start {
-  border-top-left-radius: 4px;
-  border-bottom-left-radius: 4px;
-}
-.marker-end {
-  border-top-right-radius: 4px;
-  border-bottom-right-radius: 4px;
+.marker-start  { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+.marker-end    { border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+
+/* If one .marker sits inside another .marker, show a faint outline so we know it’s a separate tag */
+.marker .marker {
+  outline: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 body {

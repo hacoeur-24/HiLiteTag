@@ -6,9 +6,15 @@ type HiLiteContentProps = {
   children: React.ReactNode;
   autoWordBoundaries?: boolean;
   autoTag?: boolean;
+  overlapTag?: boolean;
 };
 
-export const HiLiteContent = forwardRef(({ children, autoWordBoundaries, autoTag }: HiLiteContentProps, ref) => {
+export const HiLiteContent = forwardRef(({ 
+  children, 
+  autoWordBoundaries, 
+  autoTag,
+  overlapTag 
+}: HiLiteContentProps, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Core highlighting logic for both manual and auto tag
@@ -20,7 +26,7 @@ export const HiLiteContent = forwardRef(({ children, autoWordBoundaries, autoTag
         if (autoWordBoundaries) {
           range = expandRangeToWordBoundaries(range);
         }
-        wrapRangeWithMarkers(range, containerRef.current);
+        wrapRangeWithMarkers(range, containerRef.current, !!overlapTag);
       }
     }
   };

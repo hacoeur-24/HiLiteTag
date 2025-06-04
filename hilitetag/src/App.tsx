@@ -7,7 +7,7 @@ function App() {
 
   return (
     <div>
-      <HiLiteContent ref={ref} autoWordBoundaries autoTag>
+      <HiLiteContent ref={ref} autoWordBoundaries autoTag overlapTag>
         <h1>Welcome</h1>
         <p>We are doing <b>important</b> tests here.</p>
       </HiLiteContent>

@@ -1,6 +1,10 @@
 import { nanoid } from "nanoid";
 
-export function wrapRangeWithMarkers(range: Range, root: HTMLElement) {
+export function wrapRangeWithMarkers(
+  range: Range,
+  root: HTMLElement,
+  allowOverlap: boolean
+) {
   const tagId = nanoid(6);
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 
@@ -10,6 +14,11 @@ export function wrapRangeWithMarkers(range: Range, root: HTMLElement) {
   while (walker.nextNode()) {
     const node = walker.currentNode as Text;
     if (!node.parentNode || !range.intersectsNode(node)) continue;
+
+  // Only skip existing markers if overlap is NOT allowed
+  if (!allowOverlap && (node.parentNode as Element).closest(".marker")) {
+    continue;
+  }
 
     const text = node.textContent || "";
     let startOffset = 0;
@@ -40,6 +49,7 @@ export function wrapRangeWithMarkers(range: Range, root: HTMLElement) {
     const span = document.createElement("span");
     span.setAttribute("data-tag-id", tagId);
     span.className = "marker";
+
     // If this is the first segment, give it a "marker-start" class
     if (idx === 0) {
       span.classList.add("marker-start");
