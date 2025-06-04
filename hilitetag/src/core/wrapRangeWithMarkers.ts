@@ -38,6 +38,38 @@ export function wrapRangeWithMarkers(
     }
   }
 
+  // Get the selected text and trim whitespace
+  const selectedText = range.toString();
+  const trimmed = selectedText.trim();
+  if (!trimmed) {
+    // Only whitespace selected, do nothing
+    return;
+  }
+
+  // Adjust range to exclude leading/trailing whitespace
+  let leading = 0;
+  let trailing = 0;
+  for (let i = 0; i < selectedText.length; i++) {
+    if (selectedText[i] === ' ' || selectedText[i] === '\n' || selectedText[i] === '\t') leading++;
+    else break;
+  }
+  for (let i = selectedText.length - 1; i >= 0; i--) {
+    if (selectedText[i] === ' ' || selectedText[i] === '\n' || selectedText[i] === '\t') trailing++;
+    else break;
+  }
+  if (leading > 0 || trailing > 0) {
+    // Move range start forward by leading, end backward by trailing
+    let start = range.startOffset + leading;
+    let end = range.endOffset - trailing;
+    // Only adjust if in the same text node
+    if (range.startContainer === range.endContainer && range.startContainer.nodeType === Node.TEXT_NODE) {
+      range.setStart(range.startContainer, start);
+      range.setEnd(range.endContainer, end);
+    }
+    // For multi-node selection, more complex logic would be needed
+    // (for now, this covers the common case)
+  }
+
   // Phase 2: Wrap each collected node segment
   for (let idx = 0; idx < nodesToWrap.length; idx++) {
     const { node, startOffset, endOffset } = nodesToWrap[idx];
