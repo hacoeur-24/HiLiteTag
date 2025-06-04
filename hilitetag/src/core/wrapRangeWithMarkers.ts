@@ -7,7 +7,9 @@ export function wrapRangeWithMarkers(
   allowOverlap: boolean,
   tag: TagDefinition
 ) {
-  const tagId = tag.id || nanoid(8);
+  // Generate a unique marker ID for this highlight
+  const markerId = nanoid(10);
+  const tagId = tag.id;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 
   // Phase 1: Collect all text nodes within the range and their offsets
@@ -80,7 +82,11 @@ export function wrapRangeWithMarkers(
     const middle = text.slice(startOffset, endOffset);
     const after = text.slice(endOffset);
 
+    // Only wrap non-empty segments (avoid wrapping empty strings)
+    if (middle.length === 0) continue;
+
     const span = document.createElement("span");
+    span.setAttribute("data-marker-id", markerId);
     span.setAttribute("data-tag-id", tagId);
     span.className = "marker";
     // Apply tag color and custom style
@@ -98,7 +104,6 @@ export function wrapRangeWithMarkers(
       span.classList.add("marker-end");
     }
     span.textContent = middle;
-
     if (before) parent.insertBefore(document.createTextNode(before), node);
     parent.insertBefore(span, node);
     if (after) parent.insertBefore(document.createTextNode(after), node);

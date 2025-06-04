@@ -41,11 +41,10 @@ export const HiLiteContent = forwardRef(({
     highlightTag: (tag?: TagDefinition) => {
       performHighlight(tag || defaultTag);
     },
-    removeTag: (tagId: string) => {
+    removeTag: (markerId: string) => {
       if (!containerRef.current) return;
-      const spans = containerRef.current.querySelectorAll(`span.marker[data-tag-id="${tagId}"]`);
+      const spans = containerRef.current.querySelectorAll(`span.marker[data-marker-id="${markerId}"]`);
       spans.forEach(span => {
-        // Replace the span with its text content
         const textNode = document.createTextNode(span.textContent || "");
         span.replaceWith(textNode);
       });

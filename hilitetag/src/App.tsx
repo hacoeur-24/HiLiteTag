@@ -6,7 +6,7 @@ import "./App.css";
 
 function App() {
   const ref = useRef<any>(null);
-  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
 
   // Example tag definitions with custom style
   const tagDefs: TagDefinition[] = [
@@ -19,28 +19,29 @@ function App() {
   const handleTagClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.classList.contains("marker")) {
-      const tagId = target.getAttribute("data-tag-id");
-      setSelectedTagId(tagId);
+      const markerId = target.getAttribute("data-marker-id");
+      setSelectedMarkerId(markerId);
     } else {
-      setSelectedTagId(null);
+      setSelectedMarkerId(null);
     }
   };
 
-  // Handler to remove selected tag
+  // Handler to remove selected marker
   const handleRemoveTag = () => {
-    if (selectedTagId && ref.current) {
-      ref.current.removeTag(selectedTagId);
-      setSelectedTagId(null);
+    if (selectedMarkerId && ref.current) {
+      ref.current.removeTag(selectedMarkerId);
+      setSelectedMarkerId(null);
     }
   };
 
-  // Apply selectedColor to selected tag
+  // Apply selectedColor to selected marker only
   if (typeof window !== "undefined") {
     setTimeout(() => {
       document.querySelectorAll(".marker").forEach(el => {
+        const markerId = el.getAttribute("data-marker-id");
         const tagId = el.getAttribute("data-tag-id");
         const tag = tags.getById(tagId || "");
-        if (tagId && tag && tag.selectedColor && tagId === selectedTagId) {
+        if (markerId && tag && tag.selectedColor && markerId === selectedMarkerId) {
           (el as HTMLElement).style.background = tag.selectedColor;
         } else if (tag && tag.color) {
           (el as HTMLElement).style.background = tag.color;
@@ -53,7 +54,7 @@ function App() {
     <div>
       <button onClick={() => ref.current?.highlightTag(tags.getByName("tag1"))}>Highlight as tag1</button>
       <button onClick={() => ref.current?.highlightTag(tags.getByName("tag2"))}>Highlight as tag2</button>
-      <button onClick={handleRemoveTag} disabled={!selectedTagId}>Remove Selected Tag</button>
+      <button onClick={handleRemoveTag} disabled={!selectedMarkerId}>Remove Selected Tag</button>
       <HiLiteContent
         ref={ref}
         tags={tags}
@@ -66,7 +67,7 @@ function App() {
           <p>We are doing <b>important</b> tests here.</p>
         </div>
       </HiLiteContent>
-      {selectedTagId && <div style={{ color: "#fff", marginTop: 8 }}>Selected Tag ID: {selectedTagId}</div>}
+      {selectedMarkerId && <div style={{ color: "#fff", marginTop: 8 }}>Selected Marker ID: {selectedMarkerId}</div>}
     </div>
   );
 }
