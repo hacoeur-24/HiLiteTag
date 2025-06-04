@@ -10,8 +10,20 @@ function App() {
 
   // Example tag definitions with custom style
   const tagDefs: TagDefinition[] = [
-    { id: "1", name: "tag1", color: "rgba(255, 255, 0, 0.4)", selectedColor: "rgba(255, 255, 0, 0.8)", style: { fontWeight: "bold" }},
-    { id: "2", name: "tag2", color: "rgba(255, 100, 100, 0.4)", selectedColor: "rgba(255, 100, 100, 0.8)", style: { fontStyle: "italic" }}
+    { 
+      id: "1", 
+      name: "tag1", 
+      color: "rgba(255, 255, 0, 0.4)", 
+      selectedColor: "rgba(255, 255, 0, 0.8)", 
+      style: { fontWeight: "bold" }
+    },
+    { 
+      id: "2", 
+      name: "tag2", 
+      color: "rgba(255, 100, 100, 0.4)", 
+      selectedColor: "rgba(255, 100, 100, 0.8)", 
+      style: { fontStyle: "italic" }
+    }
   ];
   const tags = new HiLiteTags(tagDefs);
 
@@ -34,22 +46,6 @@ function App() {
     }
   };
 
-  // Apply selectedColor to selected marker only
-  if (typeof window !== "undefined") {
-    setTimeout(() => {
-      document.querySelectorAll(".marker").forEach(el => {
-        const markerId = el.getAttribute("data-marker-id");
-        const tagId = el.getAttribute("data-tag-id");
-        const tag = tags.getById(tagId || "");
-        if (markerId && tag && tag.selectedColor && markerId === selectedMarkerId) {
-          (el as HTMLElement).style.background = tag.selectedColor;
-        } else if (tag && tag.color) {
-          (el as HTMLElement).style.background = tag.color;
-        }
-      });
-    }, 0);
-  }
-
   return (
     <div>
       <button onClick={() => ref.current?.highlightTag(tags.getByName("tag1"))}>Highlight as tag1</button>
@@ -58,7 +54,6 @@ function App() {
       <button onClick={() => {
         const tags = ref.current?.getAllTags();
         if (tags) {
-          // For demo: log to console, but you can send to your API/DB
           console.log("All tags:", tags);
           alert(JSON.stringify(tags, null, 2));
         }
@@ -67,7 +62,9 @@ function App() {
         ref={ref}
         tags={tags}
         autoWordBoundaries
+        autoTag
         defaultTag={tags.getByName("tag2")}
+        selectedMarkerId={selectedMarkerId}
       >
         <div onClick={handleTagClick} style={{ cursor: "pointer" }}>
           <h1>Welcome</h1>

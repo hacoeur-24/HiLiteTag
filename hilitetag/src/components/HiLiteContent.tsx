@@ -1,15 +1,16 @@
 import React, { useImperativeHandle, useRef, forwardRef, useEffect } from "react";
 import { wrapRangeWithMarkers } from "@/core/wrapRangeWithMarkers";
 import { expandRangeToWordBoundaries } from "@/core/selectionUtils";
-import type { HiLiteTags, TagDefinition } from "@/core/tags";
+import type { TagDefinition } from "@/core/tags";
 
 type HiLiteContentProps = {
   children: React.ReactNode;
-  tags: HiLiteTags;
   defaultTag?: TagDefinition;
   autoWordBoundaries?: boolean;
   autoTag?: boolean;
   overlapTag?: boolean;
+  selectedMarkerId?: string | null;
+  tags?: any;
 };
 
 export const HiLiteContent = forwardRef(({ 
@@ -17,7 +18,9 @@ export const HiLiteContent = forwardRef(({
   defaultTag,
   autoWordBoundaries, 
   autoTag,
-  overlapTag 
+  overlapTag,
+  selectedMarkerId,
+  tags
 }: HiLiteContentProps, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +85,35 @@ export const HiLiteContent = forwardRef(({
       container.removeEventListener("mouseup", handleAutoTag);
     };
   }, [autoTag, autoWordBoundaries, defaultTag]);
+
+  // Update marker colors based on selection
+  useEffect(() => {
+    // Utility to convert color
+    function colorToCss(color: string | { r: number; g: number; b: number; a?: number }) {
+      if (typeof color === "string") return color;
+      const { r, g, b, a } = color;
+      return a !== undefined ? `rgba(${r},${g},${b},${a})` : `rgb(${r},${g},${b})`;
+    }
+
+    if (!containerRef.current) return;
+    const spans = containerRef.current.querySelectorAll('.marker');
+    spans.forEach(span => {
+      const markerId = span.getAttribute('data-marker-id');
+      const tagId = span.getAttribute('data-tag-id');
+      let tag: TagDefinition | undefined;
+      // Try to get tag from tags prop if available
+      if (tags && typeof tags.getById === 'function') {
+        tag = tags.getById(tagId);
+      } else if (defaultTag && tagId === defaultTag.id) {
+        tag = defaultTag;
+      }
+      if (markerId && tag && tag.selectedColor && markerId === selectedMarkerId) {
+        (span as HTMLElement).style.background = colorToCss(tag.selectedColor);
+      } else if (tag && tag.color) {
+        (span as HTMLElement).style.background = colorToCss(tag.color);
+      }
+    });
+  }, [selectedMarkerId, defaultTag, tags]);
 
   return <div ref={containerRef}>{children}</div>;
 });
