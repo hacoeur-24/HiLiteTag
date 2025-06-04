@@ -1,32 +1,50 @@
 export function expandRangeToWordBoundaries(range: Range): Range {
-  const newRange = range.cloneRange();
-
-  const startContainer = newRange.startContainer;
-  const endContainer = newRange.endContainer;
-
-  // Adjust start to the beginning of the word
-  if (startContainer.nodeType === Node.TEXT_NODE) {
-    const textNode = startContainer as Text;
-    const text = textNode.textContent || "";
-    let pos = newRange.startOffset;
-    // Move pos backward until non-word character or start of text
-    while (pos > 0 && /\w/.test(text.charAt(pos - 1))) {
-      pos--;
-    }
-    newRange.setStart(textNode, pos);
+  const selectedText = range.toString();
+  if (/^\s*$/.test(selectedText)) {
+    return range;
   }
 
-  // Adjust end to the end of the word
-  if (endContainer.nodeType === Node.TEXT_NODE) {
-    const textNode = endContainer as Text;
+  const newRange = range.cloneRange();
+
+  // Capture original boundary positions
+  const originalStartContainer = range.startContainer;
+  const originalStartOffset = range.startOffset;
+  const originalEndContainer = range.endContainer;
+  const originalEndOffset = range.endOffset;
+
+  // Adjust start to the beginning of the word only if original start is on a word character
+  if (
+    originalStartContainer.nodeType === Node.TEXT_NODE &&
+    originalStartOffset < (originalStartContainer.textContent || "").length
+  ) {
+    const textNode = originalStartContainer as Text;
     const text = textNode.textContent || "";
-    let pos = newRange.endOffset;
-    const len = text.length;
-    // Move pos forward until non-word character or end of text
-    while (pos < len && /\w/.test(text.charAt(pos))) {
-      pos++;
+    const charAtStart = text.charAt(originalStartOffset);
+    if (/\w/.test(charAtStart)) {
+      let pos = originalStartOffset;
+      while (pos > 0 && /\w/.test(text.charAt(pos - 1))) {
+        pos--;
+      }
+      newRange.setStart(textNode, pos);
     }
-    newRange.setEnd(textNode, pos);
+  }
+
+  // Adjust end to the end of the word only if original end is on a word character
+  if (
+    originalEndContainer.nodeType === Node.TEXT_NODE &&
+    originalEndOffset > 0
+  ) {
+    const textNode = originalEndContainer as Text;
+    const text = textNode.textContent || "";
+    const charBeforeEnd = text.charAt(originalEndOffset - 1);
+    if (/\w/.test(charBeforeEnd)) {
+      let pos = originalEndOffset;
+      const len = text.length;
+      while (pos < len && /\w/.test(text.charAt(pos))) {
+        pos++;
+      }
+      newRange.setEnd(textNode, pos);
+    }
   }
 
   return newRange;
