@@ -1,6 +1,6 @@
 import React, { useImperativeHandle, useRef, forwardRef, useEffect } from "react";
-import { wrapRangeWithMarkers } from "../core/wrapRangeWithMarkers";
-import { expandRangeToWordBoundaries } from "../core/selectionUtils";
+import { wrapRangeWithMarkers } from "@/core/wrapRangeWithMarkers";
+import { expandRangeToWordBoundaries } from "@/core/selectionUtils";
 
 type HiLiteContentProps = {
   children: React.ReactNode;

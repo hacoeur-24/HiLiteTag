@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { HiLiteContent } from "./components/HiLiteContent";
+import { HiLiteContent } from "@/components/HiLiteContent";
 import "./App.css";
 
 function App() {
