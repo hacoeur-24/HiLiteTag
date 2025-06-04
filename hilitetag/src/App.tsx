@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
-import { HiLiteContent } from "@/components/HiLiteContent";
-import { HiLiteTags } from "@/core/tags";
-import type { TagDefinition } from "@/core/tags";
+import { HiLiteContent } from "./components/HiLiteContent";
+import { HiLiteTags } from "./core/tags";
+import type { TagDefinition } from "./core/tags";
 import "./App.css";
 
 function App() {

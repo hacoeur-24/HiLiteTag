@@ -1,7 +1,7 @@
 import React, { useImperativeHandle, useRef, forwardRef, useEffect } from "react";
-import { wrapRangeWithMarkers } from "@/core/wrapRangeWithMarkers";
-import { expandRangeToWordBoundaries } from "@/core/selectionUtils";
-import type { TagDefinition } from "@/core/tags";
+import { wrapRangeWithMarkers } from "../core/wrapRangeWithMarkers";
+import { expandRangeToWordBoundaries } from "../core/selectionUtils";
+import type { TagDefinition } from "../core/tags";
 
 type HiLiteContentProps = {
   children: React.ReactNode;
