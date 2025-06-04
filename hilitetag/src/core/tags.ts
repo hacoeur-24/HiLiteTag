@@ -2,6 +2,7 @@ export type TagDefinition = {
   id: string;
   name: string;
   color: string;
+  selectedColor?: string; // Color to use when tag is selected
   style?: React.CSSProperties; // Optional custom style
 };
 

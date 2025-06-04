@@ -14,7 +14,6 @@ type HiLiteContentProps = {
 
 export const HiLiteContent = forwardRef(({ 
   children, 
-  tags,
   defaultTag,
   autoWordBoundaries, 
   autoTag,
@@ -37,10 +36,19 @@ export const HiLiteContent = forwardRef(({
     }
   };
 
-  // Expose highlightSelection via ref
+  // Expose highlightTag and removeTag via ref
   useImperativeHandle(ref, () => ({
-    highlightSelection: (tag?: TagDefinition) => {
+    highlightTag: (tag?: TagDefinition) => {
       performHighlight(tag || defaultTag);
+    },
+    removeTag: (tagId: string) => {
+      if (!containerRef.current) return;
+      const spans = containerRef.current.querySelectorAll(`span.marker[data-tag-id="${tagId}"]`);
+      spans.forEach(span => {
+        // Replace the span with its text content
+        const textNode = document.createTextNode(span.textContent || "");
+        span.replaceWith(textNode);
+      });
     }
   }));
 
