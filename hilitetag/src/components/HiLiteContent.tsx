@@ -1,7 +1,7 @@
 import React, { useImperativeHandle, useRef, forwardRef, useEffect } from "react";
 import { wrapRangeWithMarkers } from "../core/wrapRangeWithMarkers";
 import { expandRangeToWordBoundaries } from "../core/selectionUtils";
-import type { TagDefinition, HighlightedTag } from "../core/tags";
+import type { TagDefinition, HiLitedTags } from "../core/tags";
 
 type HiLiteContentProps = {
   children: React.ReactNode;
@@ -98,7 +98,7 @@ export const HiLiteContent = forwardRef(({
         endIndex: v.endIndex
       }));
     },
-    restoreTags: (tagsArr: HighlightedTag[]) => {
+    restoreTags: (tagsArr: HiLitedTags[]) => {
       if (!containerRef.current) return;
       // Remove all existing markers
       containerRef.current.querySelectorAll('span.marker').forEach(span => {
