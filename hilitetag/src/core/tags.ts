@@ -17,11 +17,3 @@ export class HiLiteTags {
     return this.tags;
   }
 };
-
-export type HiLitedTags = {
-  markerId: string;
-  tagId: string;
-  text: string;
-  beginIndex: number;
-  endIndex: number;
-};

@@ -41,7 +41,7 @@ Import the main components and types:
 
 ```tsx
 import { HiLiteContent, HiLiteTags } from "hilitetag";
-import type { TagDefinition, HighlightedTag } from "hilitetag";
+import type { TagDefinition, HiLiteData } from "hilitetag";
 ```
 
 ---
@@ -89,7 +89,7 @@ All marker elements for a tag share the same `markerId`, allowing you to select 
 5.	Extract highlights and store them.
 6.	Re-apply stored highlights.
 
-✅ Built-in TypeScript support – with helpful types like TagDefinition and HighlightedTag.
+✅ Built-in TypeScript support – with helpful types like TagDefinition and HiLiteData.
 
 ---
 
@@ -232,16 +232,16 @@ Example output:
 
 ### 5. Restoring Tags
 
-You can restore highlights from a saved JSON array (from `getAllTags`). This is useful for loading highlights from a database or file. For this use the exported `HighlightedTag` type for type safety when restoring tags:
+You can restore highlights from a saved JSON array (from `getAllTags`). This is useful for loading highlights from a database or file. For this use the exported `HiLiteData` type for type safety when restoring tags:
 
 ```tsx
-import type { HighlightedTag } from "hilitetag";
+import type { HiLiteData } from "hilitetag";
 
 const handleRestoreTags = async () => {
   // Load and restore tags from your db or file:
   const resp = await fetch("/tag.json");
   if (resp.ok) {
-    const tagsJson: HighlightedTag[] = await resp.json();
+    const tagsJson: HiLiteData[] = await resp.json();
     ref.current?.restoreTags(tagsJson);
   } else {
     alert("Failed to load tag.json");
@@ -312,9 +312,9 @@ type TagDefinition = {
 
 - `removeTag(markerId: string)`: Remove a specific highlight by marker id.
 
-- `getAllTags()`: Get all highlights as an array of **HighlightedTag** type:
+- `getAllTags()`: Get all highlights as an array of **HiLiteData** type:
   ```ts
-  type HighlightedTag = {
+  type HiLiteData = {
     markerId: string;
     tagId: string;
     text: string;
@@ -323,7 +323,7 @@ type TagDefinition = {
   };
   ```
 
-- `restoreTags(tags: HighlightedTag[])`: Restore highlights from a saved array.
+- `restoreTags(tags: HiLiteData[])`: Restore highlights from a saved array.
 
 ## Best Practices & Warnings
 
