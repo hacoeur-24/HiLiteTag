@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { HiLiteContent } from "./components/HiLiteContent";
 import { HiLiteTags } from "./core/tags";
-import type { TagDefinition, HighlightedTag } from "./core/tags";
+import type { TagDefinition, HiLitedTags } from "./core/tags";
 import "./App.css";
 
 function App() {
@@ -49,7 +49,7 @@ function App() {
     // Dynamically load tag.json and restore tags
     const resp = await fetch("/src/tag.json");
     if (resp.ok) {
-      const tagsJson: HighlightedTag[] = await resp.json();
+      const tagsJson: HiLitedTags[] = await resp.json();
       ref.current?.restoreTags(tagsJson);
     } else {
       alert("Failed to load tag.json");

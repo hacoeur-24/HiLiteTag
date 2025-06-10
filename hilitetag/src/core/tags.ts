@@ -18,7 +18,7 @@ export class HiLiteTags {
   }
 };
 
-export type HighlightedTag = {
+export type HiLitedTags = {
   markerId: string;
   tagId: string;
   text: string;

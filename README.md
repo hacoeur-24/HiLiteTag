@@ -8,7 +8,7 @@ A flexible, modern React component for text highlighting and tagging in complex 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Tags vs Markers](#tags-vs-markers)
-- [Component Usage](#component-usage)
+- [How to use](#component-usage)
   - [1. Define Your Tags](#1-define-your-tags)
   - [2. Basic Highlighting](#2-basic-highlighting)
   - [3. Selecting and Removing Highlights](#3-selecting-and-removing-highlights)
@@ -18,6 +18,7 @@ A flexible, modern React component for text highlighting and tagging in complex 
 - [API Reference](#api-reference)
 - [Best Practices & Warnings](#best-practices--warnings)
 - [Features](#features)
+- [Local Development & Example](#local-development--example)
 - [License](#license)
 
 ---
@@ -27,6 +28,10 @@ A flexible, modern React component for text highlighting and tagging in complex 
 ```bash
 npm install hilitetag
 ```
+```bash
+# or with yarn
+yarn add hilitetag
+```
 
 ---
 
@@ -35,12 +40,8 @@ npm install hilitetag
 Import the main components and types:
 
 ```tsx
-import { 
-  HiLiteContent, 
-  HiLiteTags, 
-  type TagDefinition, 
-  type HighlightedTag 
-} from "hilitetag";
+import { HiLiteContent, HiLiteTags } from "hilitetag";
+import type { TagDefinition, HighlightedTag } from "hilitetag";
 ```
 
 ---
@@ -50,6 +51,8 @@ import {
 **Tags** are defined by you, the developer. Each tag must have a unique `id` (ideally matching your database or business logic) and controls the color, style, and identity of a highlight.
 
 **Markers** are the HTML elements the library uses to visually represent a tag in the DOM. When you highlight text that spans multiple nodes (e.g., bold, italic, or nested elements), the library creates multiple marker elements for a single tag, all sharing the same `markerId`.
+
+Think of Tags as your logical labels (e.g., “Important”, “Reviewed”), and Markers as the visual DOM elements that span the highlighted text. One tag might correspond to multiple markers if it crosses HTML elements.
 
 **Example:**
 
@@ -77,7 +80,18 @@ All marker elements for a tag share the same `markerId`, allowing you to select 
 
 ---
 
-## Component Usage
+## How to use HiLiteTag
+	
+1.	Define your tags.
+2.	Wrap your content in HiLiteContent.
+3.	Call hiliteTag(tag) on selection.
+4.	Handle tag selection and removal.
+5.	Extract highlights and store them.
+6.	Re-apply stored highlights.
+
+✅ Built-in TypeScript support – with helpful types like TagDefinition and HighlightedTag.
+
+---
 
 ### 1. Define Your Tags
 
@@ -151,7 +165,8 @@ const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
 const handleTagClick = (e: React.MouseEvent) => {
   const target = e.target as HTMLElement;
   if (target.classList.contains("marker")) {
-    setSelectedMarkerId(target.getAttribute("data-marker-id"));
+    // Detect and store the ID of the clicked highlight marker
+    setSelectedMarkerId(target.getAttribute("data-marker-id")); 
   } else {
     setSelectedMarkerId(null);
   }
@@ -258,8 +273,6 @@ You can fully customize the appearance of your tags using the `style` property i
 }
 ```
 
----
-
 ## API Reference
 
 ### TagDefinition
@@ -312,21 +325,17 @@ type TagDefinition = {
 
 - `restoreTags(tags: HighlightedTag[])`: Restore highlights from a saved array.
 
----
-
 ## Best Practices & Warnings
 
 - **Always provide a unique `id` for each tag in your `TagDefinition`.**
 - **If you use `autoTag`, you must provide a `defaultTag`.**
-- **Be carefull with `borderRadius` in your tag style if you want the default pill look.**
+- **Be careful with `borderRadius` in your tag style if you want the default pill look.**
 - **Highlights are tracked by unique `markerId`, not by tag type.**
 - **If you want to persist highlights, use `getAllTags()` and store the result.**
 - **Whitespace-only selections are ignored.**
 - **Selections spanning multiple nodes are supported.**
 - **Selected marker color is handled automatically by the component.**
 - **Use `marker-start` and `marker-end` classes for custom border styling.**
-
----
 
 ## Features
 - Tag any text, even across nested HTML.
@@ -338,7 +347,16 @@ type TagDefinition = {
 - No manual color switching needed for selected markers.
 - Easy integration with your own tag system or database.
 
----
+## Local Development & Example
+
+You can install and run the project locally to explore or test the highlighting features. There is a simple working example already set up in `App.tsx`.
+
+```bash
+git clone https://github.com/hacoeur-24/HiLiteTag.git
+cd HiLiteTag
+npm install
+npm run dev
+```
 
 ## License
 MIT
