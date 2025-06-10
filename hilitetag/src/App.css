@@ -31,3 +31,10 @@ body {
   font-family: sans-serif;
   padding: 2rem;
 }
+
+.control-container button{
+  margin-right:16px;
+}
+.control-container button:last-child{
+  margin-right:0px;
+}

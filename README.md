@@ -7,11 +7,14 @@ A flexible, modern React component for text highlighting and tagging in complex 
 ## Table of Contents
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Tags vs Markers](#tags-vs-markers)
 - [Component Usage](#component-usage)
   - [1. Define Your Tags](#1-define-your-tags)
   - [2. Basic Highlighting](#2-basic-highlighting)
   - [3. Selecting and Removing Highlights](#3-selecting-and-removing-highlights)
   - [4. Getting All Tags (Serialization)](#4-getting-all-tags-serialization)
+  - [5. Restoring Tags](#5-restoring-tags)
+- [Customization](#customization)
 - [API Reference](#api-reference)
 - [Best Practices & Warnings](#best-practices--warnings)
 - [Features](#features)
@@ -32,8 +35,45 @@ npm install hilitetag
 Import the main components and types:
 
 ```tsx
-import { HiLiteContent, HiLiteTags, type TagDefinition } from "hilitetag";
+import { 
+  HiLiteContent, 
+  HiLiteTags, 
+  type TagDefinition, 
+  type HighlightedTag 
+} from "hilitetag";
 ```
+
+---
+
+## Tags vs Markers
+
+**Tags** are defined by you, the developer. Each tag must have a unique `id` (ideally matching your database or business logic) and controls the color, style, and identity of a highlight.
+
+**Markers** are the HTML elements the library uses to visually represent a tag in the DOM. When you highlight text that spans multiple nodes (e.g., bold, italic, or nested elements), the library creates multiple marker elements for a single tag, all sharing the same `markerId`.
+
+**Example:**
+
+Suppose you want to highlight the phrase: `We are trying to HiLite nodes.` where `HiLite` is bold:
+
+```html
+<p>
+  We are trying to 
+  <b>HiLite</b>
+  nodes
+</p>
+```
+
+After highlighting, the library will produce:
+
+```html
+<p>
+  <span class="marker marker-start" data-marker-id="abc" data-tag-id="1">We are trying to </span>
+  <b><span class="marker" data-marker-id="abc" data-tag-id="1">HiLite</span></b>
+  <span class="marker marker-end" data-marker-id="abc" data-tag-id="1"> nodes</span>
+</p>
+```
+
+All marker elements for a tag share the same `markerId`, allowing you to select or remove the entire tag, even if it spans multiple DOM nodes.
 
 ---
 
@@ -47,14 +87,12 @@ Tags control the color, style, and identity of each highlight. You can use CSS c
 const tagDefs: TagDefinition[] = [
   {
     id: "1",
-    name: "tag1",
     color: "rgba(255,255,0,0.4)",
-    selectedColor: "rgba(255,255,0,0.8)", // Optional
+    selectedColor: "rgba(255,255,0,0.8)",
     style: { fontWeight: "bold" } // Optional
   },
   {
     id: "2",
-    name: "tag2",
     color: "rgba(255,100,100,0.4)",
     selectedColor: "rgba(255,100,100,0.8)",
     style: { fontStyle: "italic" }
@@ -68,31 +106,28 @@ const tags = new HiLiteTags(tagDefs);
 Wrap your content in `HiLiteContent` and use the ref API to highlight selections:
 
 ```tsx
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { HiLiteContent, HiLiteTags, type TagDefinition } from "hilitetag";
 
 function App() {
   const ref = useRef<any>(null);
-  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+
   // ...tagDefs and tags as above...
 
-  // Handler to add Tag
+  // Highlight selected text with a tag
   const handleHighlightTag = (tagId: string) => {
     const tag = tags.getById(tagId);
-    if (ref.current) {
-      ref.current.highlightTag(tag);
-      setSelectedMarkerId(null); // Reset selection after highlighting
+    if (ref.current && tag) {
+      ref.current.hiliteTag(tag);
     }
   };
 
   return (
     <div>
-      <button onClick={() => handleHighlightTag("tag1")}>Highlight as tag1</button>
-      <button onClick={() => handleHighlightTag("tag2")}>Highlight as tag2</button>
+      <button onClick={() => handleHighlightTag("1")}>Highlight as tag 1</button>
       <HiLiteContent
         ref={ref}
         tags={tags}
-        selectedMarkerId={selectedMarkerId}
         autoWordBoundaries
       >
         <div>
@@ -147,23 +182,81 @@ return (
 You can extract all highlights for storage or sync:
 
 ```tsx
-<button onClick={() => {
+const handleGetAllTags = () => {
   const tags = ref.current?.getAllTags();
   if (tags) {
-    // For demo: log to console, but you can send to your API/DB
-    console.log("All tags:", tags);
+    // Save or send to your API/DB
     alert(JSON.stringify(tags, null, 2));
   }
-}}>
-  Get All Tags
-</button>
+};
+
+<button onClick={handleGetAllTags}>Save Tags</button>
 ```
 
 Each tag object includes:
+
 - `markerId`: Unique for each highlight
-- `tagId`: The tag type
+- `tagId`: The tag used
 - `text`: The highlighted text
-- `isStart`/`isEnd`: Whether this is the start/end of a multi-node highlight
+- `beginIndex`: Start index of the tagged text in the plain content
+- `endIndex`: End index of the tagged text in the plain content
+
+Example output:
+
+```json
+[
+  {
+    "markerId": "abc123",
+    "tagId": "1",
+    "text": "Thank you for using HiLiteTag.",
+    "beginIndex": 0,
+    "endIndex": 28
+  }
+]
+```
+
+### 5. Restoring Tags
+
+You can restore highlights from a saved JSON array (from `getAllTags`). This is useful for loading highlights from a database or file. For this use the exported `HighlightedTag` type for type safety when restoring tags:
+
+```tsx
+import type { HighlightedTag } from "hilitetag";
+
+const handleRestoreTags = async () => {
+  // Load and restore tags from your db or file:
+  const resp = await fetch("/tag.json");
+  if (resp.ok) {
+    const tagsJson: HighlightedTag[] = await resp.json();
+    ref.current?.restoreTags(tagsJson);
+  } else {
+    alert("Failed to load tag.json");
+  }
+};
+
+<button onClick={handleRestoreTags}>Restore Tags</button>
+```
+
+---
+
+## Customization
+
+You can fully customize the appearance of your tags using the `style` property in your `TagDefinition`. If you want to add borders or rounded corners, use the `marker-start` and `marker-end` classes to only apply border-radius or border styles to the start and end of a tag. This ensures that highlights spanning multiple nodes look visually correct. _For borders you can create your own style to have transparent borders on the right and left side of each markers._
+
+**Example:**
+
+```css
+.marker {
+  border: 1px solid #ffd700;
+}
+.marker.marker-start {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+.marker.marker-end {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+```
 
 ---
 
@@ -173,41 +266,51 @@ Each tag object includes:
 ```ts
 type TagDefinition = {
   id: string;
-  name: string;
-  color: string | { r: number; g: number; b: number; a?: number };
-  selectedColor?: string | { r: number; g: number; b: number; a?: number };
+  color: string;
+  selectedColor: string;
   style?: React.CSSProperties;
 };
 ```
 
 ### HiLiteTags
-- `new HiLiteTags(tagDefs: TagDefinition[])`: Create a tag manager.
-- `.getByName(name: string)`: Get a tag by name.
-- `.getById(id: string)`: Get a tag by id.
-- `.getAll()`: Get all tags.
+- `new HiLiteTags(tagDefs: TagDefinition[])` : Create a tag manager.
+
+- `.getById(id: string)` : Get a tag by id.
+
+- `.getAll()` : Get all tags.
 
 ### HiLiteContent Props
 - `tags: HiLiteTags` (**required**)
+
+- `children: React.ReactNode` (**required**)
+
+- `autoWordBoundaries?: boolean` : To select the complete word automatically
+
+- `autoTag?: boolean` : Apply a tag whenever a text is selected
+
 - `defaultTag?: TagDefinition` (required if `autoTag` is true)
-- `autoWordBoundaries?: boolean`
-- `autoTag?: boolean`
-- `overlapTag?: boolean` --experimental (not stable)
+
+- `overlapTag?: boolean` : Allow multiple tagging on existing tags
+
 - `selectedMarkerId?: string | null` (for selected color logic)
-- `children: React.ReactNode`
 
 ### HiLiteContent Ref Methods
-- `highlightTag(tag?: TagDefinition)`: Highlight the current selection with the given tag.
+- `hiliteTag(tag?: TagDefinition)`: Highlight the current selection with the given tag.
+
 - `removeTag(markerId: string)`: Remove a specific highlight by marker id.
-- `getAllTags()`: Get all highlights as an array:
+
+- `getAllTags()`: Get all highlights as an array of **HighlightedTag** type:
   ```ts
   type HighlightedTag = {
-    markerId: string | null;
-    tagId: string | null;
-    text: string | null;
-    isStart: boolean;
-    isEnd: boolean;
+    markerId: string;
+    tagId: string;
+    text: string;
+    beginIndex: number;
+    endIndex: number;
   };
   ```
+
+- `restoreTags(tags: HighlightedTag[])`: Restore highlights from a saved array.
 
 ---
 
@@ -215,13 +318,13 @@ type TagDefinition = {
 
 - **Always provide a unique `id` for each tag in your `TagDefinition`.**
 - **If you use `autoTag`, you must provide a `defaultTag`.**
-- **Do not set `borderRadius` in your tag style if you want the default pill look.**
+- **Be carefull with `borderRadius` in your tag style if you want the default pill look.**
 - **Highlights are tracked by unique `markerId`, not by tag type.**
 - **If you want to persist highlights, use `getAllTags()` and store the result.**
-- **To restore highlights, you must re-render the content and re-apply tags using your stored data.**
 - **Whitespace-only selections are ignored.**
 - **Selections spanning multiple nodes are supported.**
 - **Selected marker color is handled automatically by the component.**
+- **Use `marker-start` and `marker-end` classes for custom border styling.**
 
 ---
 
@@ -230,9 +333,10 @@ type TagDefinition = {
 - Custom tag colors, styles, and selection color.
 - Remove individual highlights.
 - Serialize all highlights for storage or sync.
+- Restore highlights from JSON.
 - Handles whitespace and word boundaries.
-- Supports both CSS color strings and `{r,g,b,a}` color objects.
 - No manual color switching needed for selected markers.
+- Easy integration with your own tag system or database.
 
 ---
 

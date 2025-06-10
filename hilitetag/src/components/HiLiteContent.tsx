@@ -1,7 +1,7 @@
 import React, { useImperativeHandle, useRef, forwardRef, useEffect } from "react";
 import { wrapRangeWithMarkers } from "../core/wrapRangeWithMarkers";
 import { expandRangeToWordBoundaries } from "../core/selectionUtils";
-import type { TagDefinition } from "../core/tags";
+import type { TagDefinition, HighlightedTag } from "../core/tags";
 
 type HiLiteContentProps = {
   children: React.ReactNode;
@@ -24,8 +24,33 @@ export const HiLiteContent = forwardRef(({
 }: HiLiteContentProps, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Helper: Get all text nodes in order
+  function getTextNodes(root: Node): Text[] {
+    const nodes: Text[] = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      nodes.push(node as Text);
+    }
+    return nodes;
+  }
+
+  // Helper: Compute absolute index for a node/offset
+  function getAbsoluteIndex(root: Node, targetNode: Node, offset: number): number {
+    let idx = 0;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (node === targetNode) {
+        return idx + offset;
+      }
+      idx += (node as Text).textContent?.length || 0;
+    }
+    return idx;
+  }
+
   // Core highlighting logic for both manual and auto tag
-  const performHighlight = (tag?: TagDefinition) => {
+  const performHilite = (tag?: TagDefinition) => {
     if (!tag) return;
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) {
@@ -39,10 +64,10 @@ export const HiLiteContent = forwardRef(({
     }
   };
 
-  // Expose highlightTag and removeTag via ref
+  // Expose hiliteTag, removeTag, getAllTags, restoreTags via ref
   useImperativeHandle(ref, () => ({
-    highlightTag: (tag?: TagDefinition) => {
-      performHighlight(tag || defaultTag);
+    hiliteTag: (tag?: TagDefinition) => {
+      performHilite(tag || defaultTag);
     },
     removeTag: (markerId: string) => {
       if (!containerRef.current) return;
@@ -54,15 +79,81 @@ export const HiLiteContent = forwardRef(({
     },
     getAllTags: () => {
       if (!containerRef.current) return [];
-      const spans = containerRef.current.querySelectorAll('span.marker');
-      return Array.from(spans).map(span => ({
-        markerId: span.getAttribute('data-marker-id'),
-        tagId: span.getAttribute('data-tag-id'),
-        text: span.textContent,
-        isStart: span.classList.contains('marker-start'),
-        isEnd: span.classList.contains('marker-end'),
-        // Optionally, you can add more context here
+      // Group by markerId
+      const markers: Record<string, { tagId: string, text: string, beginIndex: number, endIndex: number }> = {};
+      // Walk text nodes to compute absolute indexes
+      const textNodes = getTextNodes(containerRef.current);
+      let absIdx = 0;
+      textNodes.forEach(node => {
+        let parent = node.parentElement;
+        if (parent && parent.classList.contains('marker')) {
+          const markerId = parent.getAttribute('data-marker-id')!;
+          const tagId = parent.getAttribute('data-tag-id')!;
+          const text = node.textContent || "";
+          if (!markers[markerId]) {
+            markers[markerId] = {
+              tagId,
+              text: '',
+              beginIndex: absIdx,
+              endIndex: absIdx
+            };
+          }
+          markers[markerId].text += text;
+          markers[markerId].endIndex = absIdx + text.length;
+        }
+        absIdx += node.textContent?.length || 0;
+      });
+      // Return as array
+      return Object.entries(markers).map(([markerId, v]) => ({
+        markerId,
+        tagId: v.tagId,
+        text: v.text,
+        beginIndex: v.beginIndex,
+        endIndex: v.endIndex
       }));
+    },
+    restoreTags: (tagsArr: HighlightedTag[]) => {
+      if (!containerRef.current) return;
+      // Remove all existing markers
+      containerRef.current.querySelectorAll('span.marker').forEach(span => {
+        const textNode = document.createTextNode(span.textContent || "");
+        span.replaceWith(textNode);
+      });
+      // Get all text nodes
+      const textNodes = getTextNodes(containerRef.current);
+      // For each tag, find the nodes covering [beginIndex, endIndex) and wrap
+      tagsArr.forEach(tagObj => {
+        const { tagId, beginIndex, endIndex } = tagObj;
+        let tag: TagDefinition | undefined;
+        if (tags && typeof tags.getById === 'function') {
+          tag = tags.getById(tagId);
+        } else if (defaultTag && tagId === defaultTag.id) {
+          tag = defaultTag;
+        }
+        if (!tag) return;
+        // Find start and end node/offset
+        let currIdx = 0;
+        let startNode: Text | null = null, endNode: Text | null = null;
+        let startOffset = 0, endOffset = 0;
+        for (let node of textNodes) {
+          const len = node.textContent?.length || 0;
+          if (!startNode && beginIndex >= currIdx && beginIndex < currIdx + len) {
+            startNode = node;
+            startOffset = beginIndex - currIdx;
+          }
+          if (!endNode && endIndex > currIdx && endIndex <= currIdx + len) {
+            endNode = node;
+            endOffset = endIndex - currIdx;
+          }
+          currIdx += len;
+        }
+        if (startNode && endNode && containerRef.current) {
+          const range = document.createRange();
+          range.setStart(startNode, startOffset);
+          range.setEnd(endNode, endOffset);
+          wrapRangeWithMarkers(range, containerRef.current as HTMLElement, true, tag);
+        }
+      });
     }
   }));
 
@@ -77,7 +168,7 @@ export const HiLiteContent = forwardRef(({
     if (!container) return;
 
     const handleAutoTag = () => {
-      performHighlight(defaultTag);
+      performHilite(defaultTag);
     };
 
     container.addEventListener("mouseup", handleAutoTag);
@@ -88,11 +179,8 @@ export const HiLiteContent = forwardRef(({
 
   // Update marker colors based on selection
   useEffect(() => {
-    // Utility to convert color
-    function colorToCss(color: string | { r: number; g: number; b: number; a?: number }) {
-      if (typeof color === "string") return color;
-      const { r, g, b, a } = color;
-      return a !== undefined ? `rgba(${r},${g},${b},${a})` : `rgb(${r},${g},${b})`;
+    function colorToCss(color: string) {
+      return color;
     }
 
     if (!containerRef.current) return;

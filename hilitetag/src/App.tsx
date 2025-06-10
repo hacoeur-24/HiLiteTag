@@ -1,25 +1,24 @@
 import { useRef, useState } from "react";
 import { HiLiteContent } from "./components/HiLiteContent";
 import { HiLiteTags } from "./core/tags";
-import type { TagDefinition } from "./core/tags";
+import type { TagDefinition, HighlightedTag } from "./core/tags";
 import "./App.css";
 
 function App() {
   const ref = useRef<any>(null);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+  const [showAllTags, setShowAllTags] = useState<boolean>(false);
 
   // Example tag definitions with custom style
   const tagDefs: TagDefinition[] = [
     { 
       id: "1", 
-      name: "tag1", 
       color: "rgba(255, 255, 0, 0.4)", 
       selectedColor: "rgba(255, 255, 0, 0.8)", 
       style: { fontWeight: "bold" }
     },
     { 
       id: "2", 
-      name: "tag2", 
       color: "rgba(255, 100, 100, 0.4)", 
       selectedColor: "rgba(255, 100, 100, 0.8)", 
       style: { fontStyle: "italic" }
@@ -46,24 +45,35 @@ function App() {
     }
   };
 
+  const handleRestoreTags = async () => {
+    // Dynamically load tag.json and restore tags
+    const resp = await fetch("/src/tag.json");
+    if (resp.ok) {
+      const tagsJson: HighlightedTag[] = await resp.json();
+      ref.current?.restoreTags(tagsJson);
+    } else {
+      alert("Failed to load tag.json");
+    }
+  };
+
   return (
     <div>
-      <button onClick={() => ref.current?.highlightTag(tags.getByName("tag1"))}>Highlight as tag1</button>
-      <button onClick={() => ref.current?.highlightTag(tags.getByName("tag2"))}>Highlight as tag2</button>
-      <button onClick={handleRemoveTag} disabled={!selectedMarkerId}>Remove Selected Tag</button>
-      <button onClick={() => {
-        const tags = ref.current?.getAllTags();
-        if (tags) {
-          console.log("All tags:", tags);
-          alert(JSON.stringify(tags, null, 2));
-        }
-      }}>Get All Tags</button>
+      <div className="control-container" style={{ justifyContent: "space-between", display: "flex" }}>
+        <button onClick={() => ref.current?.hiliteTag(tags.getById("1"))}>Highlight as tag1</button>
+        <button onClick={() => ref.current?.hiliteTag(tags.getById("2"))}>Highlight as tag2</button>
+        <button onClick={handleRemoveTag} disabled={!selectedMarkerId}>Remove Selected Tag</button>
+        <button onClick={() => setShowAllTags(prev => !prev)}>
+          {showAllTags ? "Hide All Tags" : "Show All Tags"}
+        </button>
+        <button onClick={handleRestoreTags}>Restore Tags</button>
+      </div>
+
       <HiLiteContent
         ref={ref}
         tags={tags}
         autoWordBoundaries
         autoTag
-        defaultTag={tags.getByName("tag2")}
+        defaultTag={tags.getById("2")}
         selectedMarkerId={selectedMarkerId}
       >
         <div onClick={handleTagClick} style={{ cursor: "pointer" }}>
@@ -72,6 +82,13 @@ function App() {
         </div>
       </HiLiteContent>
       {selectedMarkerId && <div style={{ color: "#fff", marginTop: 8 }}>Selected Marker ID: {selectedMarkerId}</div>}
+      {/* I want this to show only when we click on getAllTags button */}
+      {showAllTags && (
+        <div>
+          <h2>All Tags</h2>
+          <pre>{JSON.stringify(ref.current?.getAllTags(), null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 }
