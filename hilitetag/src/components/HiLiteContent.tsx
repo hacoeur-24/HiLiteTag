@@ -35,20 +35,6 @@ export const HiLiteContent = forwardRef(({
     return nodes;
   }
 
-  // Helper: Compute absolute index for a node/offset
-  function getAbsoluteIndex(root: Node, targetNode: Node, offset: number): number {
-    let idx = 0;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    let node;
-    while ((node = walker.nextNode())) {
-      if (node === targetNode) {
-        return idx + offset;
-      }
-      idx += (node as Text).textContent?.length || 0;
-    }
-    return idx;
-  }
-
   // Core highlighting logic for both manual and auto tag
   const performHilite = (tag?: TagDefinition) => {
     if (!tag) return;
