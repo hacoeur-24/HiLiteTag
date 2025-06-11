@@ -76,6 +76,7 @@ function App() {
         autoTag
         defaultTag={tags.getById("2")}
         selectedMarkerId={selectedMarkerId}
+        overlapTag
       >
         <div onClick={handleTagClick} style={{ cursor: "pointer" }}>
           <h1>Welcome</h1>

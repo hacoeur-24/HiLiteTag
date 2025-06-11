@@ -67,12 +67,41 @@ export function wrapRangeWithMarkers(
     if (range.startContainer === range.endContainer && range.startContainer.nodeType === Node.TEXT_NODE) {
       range.setStart(range.startContainer, start);
       range.setEnd(range.endContainer, end);
+    } else {
+      // For multi-node selection, trim whitespace in the first and last node segments
+      if (nodesToWrap.length > 0) {
+        // Trim leading whitespace in the first node
+        let first = nodesToWrap[0];
+        let firstText = first.node.textContent?.slice(first.startOffset, first.endOffset) || "";
+        let firstTrim = firstText.match(/^\s*/)?.[0].length || 0;
+        if (firstTrim > 0) {
+          first.startOffset += firstTrim;
+        }
+        // Trim trailing whitespace in the last node
+        let last = nodesToWrap[nodesToWrap.length - 1];
+        let lastText = last.node.textContent?.slice(last.startOffset, last.endOffset) || "";
+        let lastTrim = lastText.match(/\s*$/)?.[0].length || 0;
+        if (lastTrim > 0) {
+          last.endOffset -= lastTrim;
+        }
+      }
     }
-    // For multi-node selection, more complex logic would be needed
-    // (for now, this covers the common case)
   }
 
   // Phase 2: Wrap each collected node segment
+  // Find the first and last non-empty segment after trimming
+  let firstNonEmptyIdx = -1;
+  let lastNonEmptyIdx = -1;
+  for (let i = 0; i < nodesToWrap.length; i++) {
+    const { node, startOffset, endOffset } = nodesToWrap[i];
+    const text = node.textContent || "";
+    const middle = text.slice(startOffset, endOffset);
+    if (middle.length > 0) {
+      if (firstNonEmptyIdx === -1) firstNonEmptyIdx = i;
+      lastNonEmptyIdx = i;
+    }
+  }
+
   for (let idx = 0; idx < nodesToWrap.length; idx++) {
     const { node, startOffset, endOffset } = nodesToWrap[idx];
     const text = node.textContent || "";
@@ -95,12 +124,12 @@ export function wrapRangeWithMarkers(
       Object.assign(span.style, tag.style);
     }
 
-    // If this is the first segment, give it a "marker-start" class
-    if (idx === 0) {
+    // Only apply marker-start to the first non-empty segment
+    if (idx === firstNonEmptyIdx) {
       span.classList.add("marker-start");
     }
-    // If this is the last segment, give it a "marker-end" class
-    if (idx === nodesToWrap.length - 1) {
+    // Only apply marker-end to the last non-empty segment
+    if (idx === lastNonEmptyIdx) {
       span.classList.add("marker-end");
     }
     span.textContent = middle;
