@@ -1,6 +1,6 @@
 # HiLiteTag
 
-A flexible, modern React component for text highlighting and tagging in complex HTML. Supports custom tags, colors, styles, selection/removal, and easy serialization for storage.
+A flexible, modern React component for text highlighting and tagging in complex HTML. Supports custom tags, colors, styles, selection/removal, overlapping tags, and easy serialization for storage.
 
 ---
 
@@ -81,7 +81,7 @@ All marker elements for a tag share the same `markerId`, allowing you to select 
 ---
 
 ## How to use HiLiteTag
-	
+  
 1.	Define your tags.
 2.	Wrap your content in HiLiteContent.
 3.	Call hiliteTag(tag) on selection.
@@ -156,21 +156,10 @@ function App() {
 
 ### 3. Selecting and Removing Highlights
 
-You can let users select a highlight (marker) and remove it:
+The library includes built-in support for selecting markers. Simply provide the `onMarkerSelect` prop and manage the selected state:
 
 ```tsx
 const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
-
-// Select marker on click
-const handleTagClick = (e: React.MouseEvent) => {
-  const target = e.target as HTMLElement;
-  if (target.classList.contains("marker")) {
-    // Detect and store the ID of the clicked highlight marker
-    setSelectedMarkerId(target.getAttribute("data-marker-id")); 
-  } else {
-    setSelectedMarkerId(null);
-  }
-};
 
 // Remove selected marker
 const handleRemoveTag = () => {
@@ -185,12 +174,37 @@ return (
     <button onClick={handleRemoveTag} disabled={!selectedMarkerId}>
         Remove Selected Tag
     </button>
-    <HiLiteContent ...>
-        <div onClick={handleTagClick} style={{ cursor: "pointer" }}>...</div>
+    <HiLiteContent
+      ref={ref}
+      tags={tags}
+      selectedMarkerId={selectedMarkerId}
+      onMarkerSelect={setSelectedMarkerId}
+      overlapTag  // Enable overlapping tags
+    >
+      <div>
+        <p>We are doing <b>important</b> tests here.</p>
+      </div>
     </HiLiteContent>
   </>
 );
 ```
+
+Optionnaly you can also create a seperate function to add other behaviour like a custom menu:
+```tsx
+// Select marker on click
+const handleTagSelect = (markerId: string | null) => {
+  setSelectedMarkerId(markerId);
+};
+
+// HiLiteContent
+...onMarkerSelect={handleTagSelect}
+```
+
+When `onMarkerSelect` is provided:
+- Markers become clickable (cursor changes to pointer)
+- Clicking a marker selects it
+- For overlapping tags, the innermost (shortest) tag is selected first
+- Clicking outside a marker deselects it
 
 ### 4. Getting All Tags (Serialization)
 
@@ -275,15 +289,15 @@ You can fully customize the appearance of your tags using the `style` property i
 
 ## API Reference
 
-### TagDefinition
-```ts
-type TagDefinition = {
-  id: string;
-  color: string;
-  selectedColor: string;
-  style?: React.CSSProperties;
-};
-```
+### HiLiteContent Props
+- `tags: HiLiteTags` (**required**)
+- `children: React.ReactNode` (**required**)
+- `autoWordBoundaries?: boolean` : To select the complete word automatically
+- `autoTag?: boolean` : Apply a tag whenever a text is selected
+- `defaultTag?: TagDefinition` (required if `autoTag` is true)
+- `overlapTag?: boolean` : Allow multiple tagging on existing tags
+- `selectedMarkerId?: string | null` : Currently selected marker ID
+- `onMarkerSelect?: (markerId: string | null) => void` : Callback when a marker is clicked, provides built-in selection handling
 
 ### HiLiteTags
 - `new HiLiteTags(tagDefs: TagDefinition[])` : Create a tag manager.
@@ -291,21 +305,6 @@ type TagDefinition = {
 - `.getById(id: string)` : Get a tag by id.
 
 - `.getAll()` : Get all tags.
-
-### HiLiteContent Props
-- `tags: HiLiteTags` (**required**)
-
-- `children: React.ReactNode` (**required**)
-
-- `autoWordBoundaries?: boolean` : To select the complete word automatically
-
-- `autoTag?: boolean` : Apply a tag whenever a text is selected
-
-- `defaultTag?: TagDefinition` (required if `autoTag` is true)
-
-- `overlapTag?: boolean` : Allow multiple tagging on existing tags
-
-- `selectedMarkerId?: string | null` (for selected color logic)
 
 ### HiLiteContent Ref Methods
 - `hiliteTag(tag?: TagDefinition)`: Highlight the current selection with the given tag.
@@ -329,7 +328,8 @@ type TagDefinition = {
 
 - **Always provide a unique `id` for each tag in your `TagDefinition`.**
 - **If you use `autoTag`, you must provide a `defaultTag`.**
-- **Be careful with `borderRadius` in your tag style if you want the default pill look.**
+- **Enable `overlapTag` when you want to support nested highlights.**
+- **For overlapping tags, inner tags are always selected first when clicked.**
 - **Highlights are tracked by unique `markerId`, not by tag type.**
 - **If you want to persist highlights, use `getAllTags()` and store the result.**
 - **Whitespace-only selections are ignored.**
@@ -339,6 +339,8 @@ type TagDefinition = {
 
 ## Features
 - Tag any text, even across nested HTML.
+- Supports overlapping and nested tags
+- Smart marker selection (automatically selects inner tags first)
 - Custom tag colors, styles, and selection color.
 - Remove individual highlights.
 - Serialize all highlights for storage or sync.
@@ -346,6 +348,7 @@ type TagDefinition = {
 - Handles whitespace and word boundaries.
 - No manual color switching needed for selected markers.
 - Easy integration with your own tag system or database.
+- Built-in marker selection handling
 
 ## Local Development & Example
 

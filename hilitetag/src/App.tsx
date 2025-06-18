@@ -27,18 +27,12 @@ function App() {
   ];
   const tags = new HiLiteTags(tagDefs);
 
-  // Handler to select a tag when a marker is clicked
-  const handleTagClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.classList.contains("marker")) {
-      const markerId = target.getAttribute("data-marker-id");
-      setSelectedMarkerId(markerId);
-    } else {
-      setSelectedMarkerId(null);
-    }
+  // Handler for when a tag is selected
+  const handleTagSelect = (markerId: string | null) => {
+    setSelectedMarkerId(markerId);
   };
 
-  // Handler to remove selected marker
+  // Handler to remove selected tag
   const handleRemoveTag = () => {
     if (selectedMarkerId && ref.current) {
       ref.current.removeTag(selectedMarkerId);
@@ -77,9 +71,10 @@ function App() {
         defaultTag={tags.getById("2")}
         selectedMarkerId={selectedMarkerId}
         overlapTag
+        onMarkerSelect={setSelectedMarkerId}
       >
-        <div onClick={handleTagClick} style={{ cursor: "pointer" }}>
-          <h1>Welcome</h1>
+        <div>
+          <h1>Welcome to HiLiteTag</h1>
           <p>We are doing <b>important</b> tests here.</p>
         </div>
       </HiLiteContent>

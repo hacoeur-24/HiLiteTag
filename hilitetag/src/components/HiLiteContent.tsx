@@ -21,9 +21,44 @@ export const HiLiteContent = forwardRef(({
   autoTag,
   overlapTag,
   selectedMarkerId,
-  tags
-}: HiLiteContentProps, ref) => {
+  tags,
+  onMarkerSelect, // Add this new prop
+}: HiLiteContentProps & {
+  onMarkerSelect?: (markerId: string | null) => void; // Add this type
+}, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Add click handler
+  const handleMarkerClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains("marker")) {
+      // Find all markers at the clicked position
+      const container = target.closest('div');
+      if (!container) return;
+
+      // Get click position
+      const x = e.clientX;
+      const y = e.clientY;
+
+      // Find all markers that contain the clicked point
+      const markers = Array.from(container.querySelectorAll('.marker'))
+        .filter(marker => {
+          const markerRect = marker.getBoundingClientRect();
+          return x >= markerRect.left && x <= markerRect.right &&
+                 y >= markerRect.top && y <= markerRect.bottom;
+        }) as HTMLElement[];
+
+      // Sort markers by length and select the shortest one
+      const shortestMarker = markers.sort((a, b) => 
+        (a.textContent?.length || 0) - (b.textContent?.length || 0)
+      )[0];
+
+      const markerId = shortestMarker?.getAttribute("data-marker-id") || target.getAttribute("data-marker-id");
+      onMarkerSelect?.(markerId);
+    } else {
+      onMarkerSelect?.(null);
+    }
+  };
 
   // Helper: Get all text nodes in order
   function getTextNodes(root: Node): Text[] {
@@ -66,51 +101,92 @@ export const HiLiteContent = forwardRef(({
     },
     getAllTags: () => {
       if (!containerRef.current) return [];
-      // Group by markerId
-      const markers: Record<string, { tagId: string, text: string, beginIndex: number, endIndex: number }> = {};
-      // Walk text nodes to compute absolute indexes
-      const textNodes = getTextNodes(containerRef.current);
+      
+      const markers: HiLiteData[] = [];
       let absIdx = 0;
-      textNodes.forEach(node => {
-        let parent = node.parentElement;
-        if (parent && parent.classList.contains('marker')) {
-          const markerId = parent.getAttribute('data-marker-id')!;
-          const tagId = parent.getAttribute('data-tag-id')!;
-          const text = node.textContent || "";
-          if (!markers[markerId]) {
-            markers[markerId] = {
-              tagId,
-              text: '',
-              beginIndex: absIdx,
-              endIndex: absIdx
-            };
+      const markerStack: { markerId: string, tagId: string, text: string, beginIndex: number }[] = [];
+
+      // Helper function to process a text node
+      function processNode(node: Node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent || '';
+          // Update text for all active markers
+          markerStack.forEach(marker => {
+            marker.text += text;
+          });
+          absIdx += text.length;
+        } else if (node instanceof HTMLElement) {
+          if (node.classList.contains('marker')) {
+            const markerId = node.getAttribute('data-marker-id')!;
+            const tagId = node.getAttribute('data-tag-id')!;
+            
+            if (node.classList.contains('marker-start')) {
+              // Start a new marker
+              markerStack.push({
+                markerId,
+                tagId,
+                text: '',
+                beginIndex: absIdx
+              });
+            }
+
+            // Process children
+            for (let child of Array.from(node.childNodes)) {
+              processNode(child);
+            }
+
+            if (node.classList.contains('marker-end')) {
+              // Find and complete the marker
+              const markerIndex = markerStack.findIndex(m => m.markerId === markerId);
+              if (markerIndex !== -1) {
+                const marker = markerStack[markerIndex];
+                markers.push({
+                  markerId: marker.markerId,
+                  tagId: marker.tagId,
+                  text: marker.text,
+                  beginIndex: marker.beginIndex,
+                  endIndex: absIdx
+                });
+                markerStack.splice(markerIndex, 1);
+              }
+            }
+          } else {
+            // Process children for non-marker elements
+            for (let child of Array.from(node.childNodes)) {
+              processNode(child);
+            }
           }
-          markers[markerId].text += text;
-          markers[markerId].endIndex = absIdx + text.length;
         }
-        absIdx += node.textContent?.length || 0;
-      });
-      // Return as array
-      return Object.entries(markers).map(([markerId, v]) => ({
-        markerId,
-        tagId: v.tagId,
-        text: v.text,
-        beginIndex: v.beginIndex,
-        endIndex: v.endIndex
-      }));
+      }
+
+      // Start processing from the container
+      processNode(containerRef.current);
+      return markers;
     },
+
     restoreTags: (tagsArr: HiLiteData[]) => {
       if (!containerRef.current) return;
+      
       // Remove all existing markers
       containerRef.current.querySelectorAll('span.marker').forEach(span => {
         const textNode = document.createTextNode(span.textContent || "");
         span.replaceWith(textNode);
       });
+
+      // Sort tags by length (shorter tags first) and then by position
+      // This ensures inner tags are created before outer tags
+      const sortedTags = [...tagsArr].sort((a, b) => {
+        const lengthA = a.endIndex - a.beginIndex;
+        const lengthB = b.endIndex - b.beginIndex;
+        return lengthA - lengthB || a.beginIndex - b.beginIndex;
+      });
+      
       // Get all text nodes
-      const textNodes = getTextNodes(containerRef.current);
+      let textNodes = getTextNodes(containerRef.current);
+      
       // For each tag, find the nodes covering [beginIndex, endIndex) and wrap
-      tagsArr.forEach(tagObj => {
-        const { tagId, beginIndex, endIndex } = tagObj;
+      sortedTags.forEach(tagObj => {
+        const { tagId, beginIndex, endIndex, markerId } = tagObj;
         let tag: TagDefinition | undefined;
         if (tags && typeof tags.getById === 'function') {
           tag = tags.getById(tagId);
@@ -118,10 +194,18 @@ export const HiLiteContent = forwardRef(({
           tag = defaultTag;
         }
         if (!tag) return;
+
         // Find start and end node/offset
         let currIdx = 0;
-        let startNode: Text | null = null, endNode: Text | null = null;
-        let startOffset = 0, endOffset = 0;
+        let startNode: Text | null = null;
+        let endNode: Text | null = null;
+        let startOffset = 0;
+        let endOffset = 0;
+        
+        // Refresh text nodes as they may have changed after wrapping
+        if (!containerRef.current) return;
+        textNodes = getTextNodes(containerRef.current);
+        
         for (let node of textNodes) {
           const len = node.textContent?.length || 0;
           if (!startNode && beginIndex >= currIdx && beginIndex < currIdx + len) {
@@ -134,11 +218,21 @@ export const HiLiteContent = forwardRef(({
           }
           currIdx += len;
         }
+
         if (startNode && endNode && containerRef.current) {
-          const range = document.createRange();
+          let range = document.createRange();
           range.setStart(startNode, startOffset);
           range.setEnd(endNode, endOffset);
-          wrapRangeWithMarkers(range, containerRef.current as HTMLElement, true, tag);
+
+          // For overlapping tags, we need to check if we're wrapping an existing marker
+          const existingMarker = range.commonAncestorContainer.parentElement?.closest('.marker');
+          if (existingMarker) {
+            // If we're wrapping an existing marker, we need to expand our range to include the entire marker
+            range = document.createRange();
+            range.selectNode(existingMarker);
+          }
+
+          wrapRangeWithMarkers(range, containerRef.current as HTMLElement, true, tag, markerId);
         }
       });
     }
@@ -190,5 +284,13 @@ export const HiLiteContent = forwardRef(({
     });
   }, [selectedMarkerId, defaultTag, tags]);
 
-  return <div ref={containerRef}>{children}</div>;
+  return (
+    <div 
+      ref={containerRef} 
+      onClick={onMarkerSelect ? handleMarkerClick : undefined}
+      style={{ cursor: onMarkerSelect ? 'pointer' : undefined }}
+    >
+      {children}
+    </div>
+  );
 });

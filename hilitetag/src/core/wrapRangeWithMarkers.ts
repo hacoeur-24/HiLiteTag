@@ -5,10 +5,11 @@ export function wrapRangeWithMarkers(
   range: Range,
   root: HTMLElement,
   allowOverlap: boolean,
-  tag: TagDefinition
+  tag: TagDefinition,
+  providedMarkerId?: string
 ) {
-  // Generate a unique marker ID for this highlight
-  const markerId = nanoid(10);
+  // Use provided marker ID or generate a new one
+  const markerId = providedMarkerId || nanoid(10);
   const tagId = tag.id;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 
