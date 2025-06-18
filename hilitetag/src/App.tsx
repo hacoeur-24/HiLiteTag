@@ -71,7 +71,7 @@ function App() {
         defaultTag={tags.getById("2")}
         selectedMarkerId={selectedMarkerId}
         overlapTag
-        onMarkerSelect={setSelectedMarkerId}
+        onMarkerSelect={handleTagSelect}
       >
         <div>
           <h1>Welcome to HiLiteTag</h1>
