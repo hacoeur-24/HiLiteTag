@@ -73,20 +73,31 @@ export const HiLiteContent = forwardRef(({
 
   // Core highlighting logic for both manual and auto tag
   const performHilite = (tag?: TagDefinition) => {
-    if (!tag) return;
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      let range = sel.getRangeAt(0);
-      if (!range.collapsed && containerRef.current?.contains(range.commonAncestorContainer)) {
-        if (autoWordBoundaries) {
-          range = expandRangeToWordBoundaries(range);
-        }
-        wrapRangeWithMarkers(range, containerRef.current, !!overlapTag, tag);
-      }
+    if (!tag) {
+      console.warn('No tag provided. Make sure to provide a tag or set a defaultTag when using autoTag.');
+      return;
     }
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) {
+      console.warn('No text selected for highlighting');
+      return;
+    }
+    let range = sel.getRangeAt(0);
+    if (range.collapsed) {
+      console.warn('Empty text selection. Select some text to highlight.');
+      return;
+    }
+    if (!containerRef.current?.contains(range.commonAncestorContainer)) {
+      console.warn('Selected text is outside the HiLiteContent component');
+      return;
+    }
+    if (autoWordBoundaries) {
+      range = expandRangeToWordBoundaries(range);
+    }
+    wrapRangeWithMarkers(range, containerRef.current, !!overlapTag, tag);
   };
 
-  // Expose hiliteTag, removeTag, getAllTags, restoreTags via ref
+  // Expose hiliteTag, removeTag, getAllTags, restoreTags, and updateTag via ref
   useImperativeHandle(ref, () => ({
     hiliteTag: (tag?: TagDefinition) => {
       performHilite(tag || defaultTag);
@@ -99,8 +110,45 @@ export const HiLiteContent = forwardRef(({
         span.replaceWith(textNode);
       });
     },
+    updateTag: (markerId: string, newTag: TagDefinition | undefined) => {
+      if (!containerRef.current || !markerId) {
+        console.warn('No container ref or marker ID provided');
+        return;
+      }
+
+      if (!newTag) {
+        console.warn('No tag provided to updateTag');
+        return;
+      }
+
+      const spans = containerRef.current.querySelectorAll(`span.marker[data-marker-id="${markerId}"]`);
+      if (spans.length === 0) {
+        console.warn(`No markers found with id: ${markerId}`);
+        return;
+      }
+
+      spans.forEach(span => {
+        // Update data-tag-id attribute
+        span.setAttribute('data-tag-id', newTag.id);
+        
+        // Apply new tag's color and style
+        const el = span as HTMLElement;
+        el.style.background = newTag.color;
+        if (newTag.style) {
+          Object.assign(el.style, newTag.style);
+        }
+      });
+    },
     getAllTags: () => {
-      if (!containerRef.current) return [];
+      if (!containerRef.current) {
+        console.warn('getAllTags called before HiLiteContent container is ready');
+        return [];
+      }
+      const markerElements = containerRef.current.querySelectorAll('.marker');
+      if (markerElements.length === 0) {
+        console.warn('No markers found in the content');
+        return [];
+      }
       
       const markers: HiLiteData[] = [];
       let absIdx = 0;
@@ -165,7 +213,35 @@ export const HiLiteContent = forwardRef(({
     },
 
     restoreTags: (tagsArr: HiLiteData[]) => {
-      if (!containerRef.current) return;
+      if (!containerRef.current) {
+        console.warn('Failed to restore tags: HiLiteContent container not ready');
+        return;
+      }
+
+      if (!Array.isArray(tagsArr)) {
+        console.warn('restoreTags expects an array of HiLiteData, received:', typeof tagsArr);
+        return;
+      }
+
+      if (tagsArr.length === 0) {
+        console.warn('restoreTags called with an empty array');
+        return;
+      }
+
+      // Validate tag data structure
+      const invalidTags = tagsArr.filter(tag => {
+        const isValid = tag.markerId && tag.tagId && 
+                       typeof tag.beginIndex === 'number' && 
+                       typeof tag.endIndex === 'number';
+        if (!isValid) {
+          console.warn('Invalid tag data structure:', tag);
+        }
+        return !isValid;
+      });
+
+      if (invalidTags.length > 0) {
+        console.warn(`${invalidTags.length} invalid tags found and will be skipped`);
+      }
       
       // Remove all existing markers
       containerRef.current.querySelectorAll('span.marker').forEach(span => {

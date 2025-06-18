@@ -40,6 +40,7 @@ function App() {
     }
   };
 
+  // Handler to restore tags from tag.json
   const handleRestoreTags = async () => {
     // Dynamically load tag.json and restore tags
     const resp = await fetch("/src/tag.json");
@@ -51,11 +52,20 @@ function App() {
     }
   };
 
+  // Handler to update selected tag
+  const handleUpdateTag = (newTag: TagDefinition) => {
+    if (ref.current && selectedMarkerId) {
+      ref.current.updateTag("sauihd", newTag);
+      setSelectedMarkerId(null); // Clear selection after update
+    }
+  };
+
   return (
     <div>
+      <img src="./src/highlighter.svg" alt="" width={50} height={50} style={{ padding: 16 }} />
       <div className="control-container" style={{ justifyContent: "space-between", display: "flex" }}>
-        <button onClick={() => ref.current?.hiliteTag(tags.getById("1"))}>Highlight as tag1</button>
-        <button onClick={() => ref.current?.hiliteTag(tags.getById("2"))}>Highlight as tag2</button>
+        <button onClick={() => ref.current?.hiliteTag(tags.getById("1"))}>Highlight as tag-1</button>
+        <button onClick={() => handleUpdateTag(tags.getById("2"))}>Update tag as tag-2</button>
         <button onClick={handleRemoveTag} disabled={!selectedMarkerId}>Remove Selected Tag</button>
         <button onClick={() => setShowAllTags(prev => !prev)}>
           {showAllTags ? "Hide All Tags" : "Show All Tags"}
@@ -68,14 +78,14 @@ function App() {
         tags={tags}
         autoWordBoundaries
         autoTag
-        defaultTag={tags.getById("2")}
-        selectedMarkerId={selectedMarkerId}
         overlapTag
+        defaultTag={tags.getById("1")}
+        selectedMarkerId={selectedMarkerId}
         onMarkerSelect={handleTagSelect}
       >
         <div>
           <h1>Welcome to HiLiteTag</h1>
-          <p>We are doing <b>important</b> tests here.</p>
+          <p>Thank you for <b>supporting</b> this project.</p>
         </div>
       </HiLiteContent>
       {selectedMarkerId && <div style={{ color: "#fff", marginTop: 8 }}>Selected Marker ID: {selectedMarkerId}</div>}
