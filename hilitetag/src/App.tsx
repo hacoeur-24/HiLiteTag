@@ -55,7 +55,7 @@ function App() {
   // Handler to update selected tag
   const handleUpdateTag = (newTag: TagDefinition) => {
     if (ref.current && selectedMarkerId) {
-      ref.current.updateTag("sauihd", newTag);
+      ref.current.updateTag(selectedMarkerId, newTag);
       setSelectedMarkerId(null); // Clear selection after update
     }
   };

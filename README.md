@@ -8,15 +8,18 @@ A flexible, modern React component for text highlighting and tagging in complex 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Tags vs Markers](#tags-vs-markers)
-- [How to use](#component-usage)
+- [How to use HiLiteTag](#how-to-use-hilitetag)
   - [1. Define Your Tags](#1-define-your-tags)
-  - [2. Basic Highlighting](#2-basic-highlighting)
-  - [3. Selecting and Removing Highlights](#3-selecting-and-removing-highlights)
-  - [4. Getting All Tags (Serialization)](#4-getting-all-tags-serialization)
-  - [5. Restoring Tags](#5-restoring-tags)
+  - [2. Wrap content inside HiLiteContent](#2-wrap-content-inside-hilitecontent)
+  - [3. Selecting Tags](#3-selecting-tags)
+  - [4. Removing Tags](#4-removing-tags)
+  - [5. Updating Tags](#5-updating-tags)
+  - [6. Getting Tags (Serialization)](#6-getting-tags-serialization)
+  - [7. Restoring Tags from stored tags](#7-restoring-tags-from-stored-tags)
 - [Customization](#customization)
 - [API Reference](#api-reference)
 - [Best Practices & Warnings](#best-practices--warnings)
+- [Developer Experience & Debugging](#developer-experience--debugging)
 - [Features](#features)
 - [Local Development & Example](#local-development--example)
 - [License](#license)
@@ -81,13 +84,14 @@ All marker elements for a tag share the same `markerId`, allowing you to select 
 ---
 
 ## How to use HiLiteTag
-  
-1.	Define your tags.
-2.	Wrap your content in HiLiteContent.
-3.	Call hiliteTag(tag) on selection.
-4.	Handle tag selection and removal.
-5.	Extract highlights and store them.
-6.	Re-apply stored highlights.
+
+1.	Define your Tags
+2.	Wrap content inside HiLiteContent
+3.	Selecting Tags 
+4.  Removing Tags
+5.  Updating Tags
+6.	Getting Tags (Serialization)
+7.	Restoring Tags from stored tags
 
 ✅ Built-in TypeScript support – with helpful types like TagDefinition and HiLiteData.
 
@@ -115,7 +119,9 @@ const tagDefs: TagDefinition[] = [
 const tags = new HiLiteTags(tagDefs);
 ```
 
-### 2. Basic Highlighting
+---
+
+### 2. Wrap content inside HiLiteContent
 
 Wrap your content in `HiLiteContent` and use the ref API to highlight selections:
 
@@ -145,8 +151,8 @@ function App() {
         autoWordBoundaries
       >
         <div>
-          <h1>Welcome</h1>
-          <p>Thank you for using <b>HiLiteTag</b>.</p>
+          <h1>Welcome to HiLiteTag</h1>
+          <p>Thank you for <b>supporting</b> this project.</p>
         </div>
       </HiLiteContent>
     </div>
@@ -154,9 +160,53 @@ function App() {
 }
 ```
 
-### 3. Selecting and Removing Highlights
+---
 
-The library includes built-in support for selecting markers. Simply provide the `onMarkerSelect` prop and manage the selected state:
+### 3. Selecting Tags
+
+The library includes built-in support for selecting tags. Simply provide the `onMarkerSelect` prop and manage the selected state:
+
+```tsx
+const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+
+return (
+  <>
+    <HiLiteContent
+      ref={ref}
+      tags={tags}
+      selectedMarkerId={selectedMarkerId}
+      onMarkerSelect={setSelectedMarkerId}
+      overlapTag // This enables overlapping tags
+    >
+      <div>
+        <h1>Welcome to HiLiteTag</h1>
+        <p>Thank you for <b>supporting</b> this project.</p>
+      </div>
+    </HiLiteContent>
+  </>
+);
+```
+
+*Optionnaly* : you can also create a seperate function to show a custom menu:
+```tsx
+// Select marker on click
+const handleTagSelect = (markerId: string | null) => {
+  setSelectedMarkerId(markerId);
+};
+
+// HiLiteContent
+...onMarkerSelect={handleTagSelect}
+```
+
+When `onMarkerSelect` is provided:
+- Markers become clickable (cursor changes to pointer)
+- Clicking a marker selects it
+- For overlapping tags, the innermost (shortest) tag is selected first
+- Clicking outside a marker deselects it
+
+---
+
+### 4. Removing Tags
 
 ```tsx
 const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
@@ -182,31 +232,35 @@ return (
       overlapTag  // Enable overlapping tags
     >
       <div>
-        <p>We are doing <b>important</b> tests here.</p>
+        <h1>Welcome to HiLiteTag</h1>
+        <p>Thank you for <b>supporting</b> this project.</p>
       </div>
     </HiLiteContent>
   </>
 );
 ```
 
-Optionnaly you can also create a seperate function to add other behaviour like a custom menu:
+---
+
+### 5. Updating Tags
+
+You can update existing highlights to use a different tag. This is useful for changing the appearance or meaning of existing highlights:
+
 ```tsx
-// Select marker on click
-const handleTagSelect = (markerId: string | null) => {
-  setSelectedMarkerId(markerId);
+// Handler to update selected tag
+const handleUpdateTag = (newTag: TagDefinition) => {
+  if (ref.current && selectedMarkerId) {
+    ref.current.updateTag(selectedMarkerId, newTag);
+    setSelectedMarkerId(null); // Clear selection after update
+  }
 };
 
-// HiLiteContent
-...onMarkerSelect={handleTagSelect}
+<button onClick={() => handleUpdateTag(tags.getById("2"))}>
+  Update tag as tag-2
+</button>
 ```
 
-When `onMarkerSelect` is provided:
-- Markers become clickable (cursor changes to pointer)
-- Clicking a marker selects it
-- For overlapping tags, the innermost (shortest) tag is selected first
-- Clicking outside a marker deselects it
-
-### 4. Getting All Tags (Serialization)
+### 6. Getting Tags (Serialization)
 
 You can extract all highlights for storage or sync:
 
@@ -244,7 +298,7 @@ Example output:
 ]
 ```
 
-### 5. Restoring Tags
+### 7. Restoring Tags from stored tags
 
 You can restore highlights from a saved JSON array (from `getAllTags`). This is useful for loading highlights from a database or file. For this use the exported `HiLiteData` type for type safety when restoring tags:
 
@@ -311,6 +365,8 @@ You can fully customize the appearance of your tags using the `style` property i
 
 - `removeTag(markerId: string)`: Remove a specific highlight by marker id.
 
+- `updateTag(markerId: string, newTag: TagDefinition)`: Update an existing highlight with a new tag. This changes both the visual appearance and the underlying `data-tag-id`.
+
 - `getAllTags()`: Get all highlights as an array of **HiLiteData** type:
   ```ts
   type HiLiteData = {
@@ -336,6 +392,32 @@ You can fully customize the appearance of your tags using the `style` property i
 - **Selections spanning multiple nodes are supported.**
 - **Selected marker color is handled automatically by the component.**
 - **Use `marker-start` and `marker-end` classes for custom border styling.**
+
+## Developer Experience & Debugging
+
+HiLiteTag provides comprehensive debugging information through browser console warnings to help you identify and fix issues during development. The library will warn you about:
+
+- Invalid tag definitions (missing properties, duplicate IDs)
+- Empty or invalid selections
+- Selection outside the component
+- Invalid data structures when restoring tags
+- Missing required props
+- Edge cases and potential issues
+
+Example warnings:
+```
+⚠️ No text selected for highlighting
+⚠️ Tag definition missing required "color" property: {...}
+⚠️ Selected text is outside the HiLiteContent component
+⚠️ restoreTags called with an empty array
+```
+
+These warnings are non-blocking and only appear during development to help you:
+- Identify common mistakes early
+- Understand what went wrong
+- Get suggestions on how to fix issues
+- Validate input data structures
+- Debug edge cases
 
 ## Features
 - Tag any text, even across nested HTML.
