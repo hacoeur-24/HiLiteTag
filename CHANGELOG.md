@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.3] - 2025-06-19
+
+### Changed
+- `type.ts` : Fix typing issue for removeTag method.
+
+---
+
 ## [1.3.2] - 2025-06-19
 
 ### Added

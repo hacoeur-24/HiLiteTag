@@ -31,7 +31,7 @@ export interface HiLiteRef {
    * Remove a specific highlight by marker id
    * @param markerId The ID of the marker to remove
    */
-  removeTag: (markerId: string) => void;
+  removeTag: (markerId: string) => HiLiteData | undefined;
 
   /**
    * Get all highlights as an array of HiLiteData
