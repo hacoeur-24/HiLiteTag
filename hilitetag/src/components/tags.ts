@@ -1,8 +1,10 @@
+import type { CSSProperties } from "react";
+
 export type TagDefinition = {
   id: string;
   color: string;
   selectedColor: string; // Color to use when tag is selected
-  style?: React.CSSProperties; // Optional custom style
+  style?: CSSProperties; // Optional custom style
 };
 
 export class HiLiteTags {
@@ -35,6 +37,7 @@ export class HiLiteTags {
     });
     this.tags = tags;
   }
+
   getById(id: string): TagDefinition {
     const tag = this.tags.find(t => t.id === id);
     if (!tag) {
@@ -42,7 +45,8 @@ export class HiLiteTags {
     }
     return tag;
   }
+
   getAll() {
     return this.tags;
   }
-};
+}

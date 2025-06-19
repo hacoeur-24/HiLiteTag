@@ -1,8 +1,8 @@
 import React, { useImperativeHandle, useRef, forwardRef, useEffect } from "react";
-import { wrapRangeWithMarkers } from "../core/wrapRangeWithMarkers";
-import { expandRangeToWordBoundaries } from "../core/selectionUtils";
-import type { TagDefinition } from "../core/tags";
-import type { HiLiteData } from "../core/hiLiteData";
+import { wrapRangeWithMarkers } from "./wrapRangeWithMarkers";
+import { expandRangeToWordBoundaries } from "./selectionUtils";
+import type { TagDefinition } from "../components/tags";
+import type { HiLiteData, HiLiteRef } from "../components/types";
 
 type HiLiteContentProps = {
   children: React.ReactNode;
@@ -14,7 +14,9 @@ type HiLiteContentProps = {
   tags?: any;
 };
 
-export const HiLiteContent = forwardRef(({ 
+export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
+  onMarkerSelect?: (markerId: string | null) => void;
+}>(({ 
   children, 
   defaultTag,
   autoWordBoundaries, 
@@ -22,9 +24,7 @@ export const HiLiteContent = forwardRef(({
   overlapTag,
   selectedMarkerId,
   tags,
-  onMarkerSelect, // Add this new prop
-}: HiLiteContentProps & {
-  onMarkerSelect?: (markerId: string | null) => void; // Add this type
+  onMarkerSelect,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 

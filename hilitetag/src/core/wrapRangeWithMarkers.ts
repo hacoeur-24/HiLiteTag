@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import type { TagDefinition } from "../core/tags";
+import type { TagDefinition } from "../components/tags";
 
 export type MarkerResult = {
   markerId: string;

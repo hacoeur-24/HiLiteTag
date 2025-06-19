@@ -1,4 +1,4 @@
-export { HiLiteContent } from "./components/HiLiteContent";
-export { HiLiteTags } from "./core/tags";
-export type { HiLiteData } from "./core/hiLiteData";
-export type { TagDefinition } from "./core/tags";
+export { HiLiteContent } from "./core/HiLiteContent";
+export { HiLiteTags } from "./components/tags";
+export type { HiLiteData, HiLiteRef } from "./components/types";
+export type { TagDefinition } from "./components/tags";
