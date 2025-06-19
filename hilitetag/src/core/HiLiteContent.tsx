@@ -48,16 +48,45 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
                  y >= markerRect.top && y <= markerRect.bottom;
         }) as HTMLElement[];
 
-      // Sort markers by length and select the shortest one
-      const shortestMarker = markers.sort((a, b) => 
-        (a.textContent?.length || 0) - (b.textContent?.length || 0)
-      )[0];
+      if (markers.length > 0) {
+        // Get information about each marker
+        const markerInfo = markers.map(marker => {
+          const rect = marker.getBoundingClientRect();
+          const area = rect.width * rect.height;
+          return {
+            element: marker,
+            area,
+            rect,
+            // Check if click is in a uniquely covered area (not overlapped)
+            isUniquelyClicked: markers.every(other => {
+              if (other === marker) return true;
+              const otherRect = other.getBoundingClientRect();
+              // If click point is outside the other marker's bounds
+              return !(x >= otherRect.left && x <= otherRect.right &&
+                      y >= otherRect.top && y <= otherRect.bottom);
+            })
+          };
+        });
 
-      const markerId = shortestMarker?.getAttribute("data-marker-id") || target.getAttribute("data-marker-id");
-      onMarkerSelect?.(markerId);
-    } else {
-      onMarkerSelect?.(null);
+        // First, try to select marker if clicked in its unique (non-overlapped) area
+        const uniquelyClickedMarker = markerInfo.find(info => info.isUniquelyClicked);
+        if (uniquelyClickedMarker) {
+          const markerId = uniquelyClickedMarker.element.getAttribute("data-marker-id");
+          onMarkerSelect?.(markerId);
+          return;
+        }
+
+        // If click is in overlapped area, select the smallest marker
+        const smallestMarker = markerInfo.reduce((smallest, current) => 
+          current.area < smallest.area ? current : smallest
+        );
+
+        const markerId = smallestMarker.element.getAttribute("data-marker-id");
+        onMarkerSelect?.(markerId);
+        return;
+      }
     }
+    onMarkerSelect?.(null);
   };
 
   // Helper: Get all text nodes in order
@@ -148,8 +177,24 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
       if (!containerRef.current) return;
       const spans = containerRef.current.querySelectorAll(`span.marker[data-marker-id="${markerId}"]`);
       spans.forEach(span => {
-        const textNode = document.createTextNode(span.textContent || "");
-        span.replaceWith(textNode);
+        // Check if this span contains other markers
+        const nestedMarkers = span.querySelectorAll('span.marker');
+        if (nestedMarkers.length > 0) {
+          // Create a temporary fragment to hold nested content
+          const fragment = document.createDocumentFragment();
+          
+          // Move all child nodes (including nested markers) to the fragment
+          while (span.firstChild) {
+            fragment.appendChild(span.firstChild);
+          }
+          
+          // Replace the span with its content
+          span.replaceWith(fragment);
+        } else {
+          // If no nested markers, simply convert to text node
+          const textNode = document.createTextNode(span.textContent || "");
+          span.replaceWith(textNode);
+        }
       });
     },
     updateTag: (markerId: string, newTag: TagDefinition | undefined) => {
