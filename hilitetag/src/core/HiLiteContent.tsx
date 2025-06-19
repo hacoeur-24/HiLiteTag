@@ -248,9 +248,42 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
     hiliteTag: (tag?: TagDefinition) => {
       return performHilite(tag || defaultTag);
     },
-    removeTag: (markerId: string) => {
-      if (!containerRef.current) return;
+    removeTag: (markerId: string): HiLiteData | undefined => {
+      if (!containerRef.current) return undefined;
+      
       const spans = containerRef.current.querySelectorAll(`span.marker[data-marker-id="${markerId}"]`);
+      if (!spans.length) return undefined;
+
+      // Get the tag data before removal
+      const firstSpan = spans[0] as HTMLElement;
+      const tagId = firstSpan.getAttribute('data-tag-id') || '';
+      let text = '';
+      let beginIndex = 0;
+      let currIdx = 0;
+
+      // Calculate beginIndex and collect text
+      const walker = document.createTreeWalker(containerRef.current, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const node = walker.currentNode as Text;
+        if (node.parentElement?.closest(`[data-marker-id="${markerId}"]`)) {
+          if (text === '') {
+            beginIndex = currIdx;
+          }
+          text += node.textContent;
+        }
+        currIdx += (node.textContent?.length || 0);
+      }
+
+      // Create HiLiteData before removal
+      const tagData: HiLiteData = {
+        markerId,
+        tagId,
+        text,
+        beginIndex,
+        endIndex: beginIndex + text.length
+      };
+
+      // Remove the spans
       spans.forEach(span => {
         // Check if this span contains other markers
         const nestedMarkers = span.querySelectorAll('span.marker');
@@ -271,6 +304,8 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
           span.replaceWith(textNode);
         }
       });
+
+      return tagData;
     },
     updateTag: (markerId: string, newTag: TagDefinition | undefined) => {
       if (!containerRef.current || !markerId) {

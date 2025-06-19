@@ -184,7 +184,7 @@ function App() {
 
 ### 3. Creating Tags
 
-To create a tag simply use the method on ref called hiliteTag(tag), it will add the tag to the selected Text.
+To create a tag simply use the method on ref called `hiliteTag(tag)`, it will add the tag to the selected Text. The `hiliteTag` method returns a `HiLiteData` object containing information about the removed tag, similar to `removeTag` and `updateTag`. This makes it easy to sync removals with your database.
 
 ```tsx
 import { useRef } from "react";
@@ -197,19 +197,20 @@ function App() {
 
   // Highlight selected text with a tag and get the tag data
   const handleHighlightTag = (tagId: string) => {
+  if (!tag || !ref.current) return;
+
     const tag = tags.getById(tagId);
-    if (ref.current && tag) {
-      const tagData = ref.current.hiliteTag(tag);
-      if (tagData) {
-        console.log('New tag data:', tagData);
-        // You can save tagData to your database here
-        // tagData is of type HiLiteData containing:
-        // - markerId: string
-        // - tagId: string
-        // - text: string
-        // - beginIndex: number
-        // - endIndex: number
-      }
+    const tagData = ref.current.hiliteTag(tag);
+
+    if (tagData) {
+      console.log('New tag data:', tagData);
+      // You can save tagData to your database here
+      // tagData is of type HiLiteData containing:
+      // - markerId: string
+      // - tagId: string
+      // - text: string
+      // - beginIndex: number
+      // - endIndex: number
     }
   };
 
@@ -282,6 +283,8 @@ When `onMarkerSelect` is provided:
 
 ### 5. Removing Tags
 
+The `removeTag` method returns a `HiLiteData` object containing information about the removed tag, similar to `hiliteTag` and `updateTag`. This makes it easy to sync removals with your database.
+
 ```tsx
 const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
 
@@ -289,9 +292,20 @@ const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
 
 // Remove selected marker
 const handleRemoveTag = () => {
-  if (selectedMarkerId && ref.current) {
-    ref.current.removeTag(selectedMarkerId);
-    setSelectedMarkerId(null);
+  if (!selectedMarkerId || !ref.current) return;
+
+  cosnt removedTagData = ref.current.removeTag(selectedMarkerId);
+  setSelectedMarkerId(null);
+
+  if (removedTagData) {
+    console.log('Removed tag data:', removedTagData);
+    // You can remove the tag in your database here
+    // removedTagData is of type HiLiteData containing:
+    // - markerId: string
+    // - tagId: string (this will be the new tag's id)
+    // - text: string
+    // - beginIndex: number
+    // - endIndex: number
   }
 };
 
@@ -320,25 +334,27 @@ return (
 
 ### 6. Updating Tags
 
-You can update existing highlights to use a different tag. This is useful for changing the appearance or meaning of existing highlights:
+You can update existing highlighted Tags to use a different tag. This is useful for changing the appearance or meaning of existing highlights:
 
 ```tsx
 // Handler to update selected tag and get the updated tag data
 const handleUpdateTag = (newTag: TagDefinition) => {
-  if (ref.current && selectedMarkerId) {
-    const updatedTagData = ref.current.updateTag(selectedMarkerId, newTag);
-    if (updatedTagData) {
-      console.log('Updated tag data:', updatedTagData);
-      // You can update the tag in your database here
-      // updatedTagData is of type HiLiteData containing:
-      // - markerId: string
-      // - tagId: string (this will be the new tag's id)
-      // - text: string
-      // - beginIndex: number
-      // - endIndex: number
-    }
-    setSelectedMarkerId(null); // Clear selection after update
+  if (!selectedMarkerId || !ref.current) return;
+
+  const updatedTagData = ref.current.updateTag(selectedMarkerId, newTag);
+
+  if (updatedTagData) {
+    console.log('Updated tag data:', updatedTagData);
+    // You can update the tag in your database here
+    // updatedTagData is of type HiLiteData containing:
+    // - markerId: string
+    // - tagId: string (this will be the new tag's id)
+    // - text: string
+    // - beginIndex: number
+    // - endIndex: number
   }
+
+  setSelectedMarkerId(null); // Clear selection after update
 };
 
 <button onClick={() => handleUpdateTag(tags.getById("2"))}>
@@ -479,14 +495,10 @@ const tagDefs = [
 
 - `.getAll()` : Get all tags.
 
-### HiLiteContent Ref Methods
-- `hiliteTag(tag?: TagDefinition)`: Highlight the current selection with the given tag. Returns a `HiLiteData` object containing the newly created tag's data, which can be used to save the tag to your database.
+### HiLiteContent Ref Methods (CRUD + RESTORE)
+- *CREATE* : `hiliteTag(tag?: TagDefinition)`: Highlight the current selection with the given tag. Returns a `HiLiteData` object containing the newly created tag's data, which can be used to save the tag to your database.
 
-- `removeTag(markerId: string)`: Remove a specific highlight by marker id.
-
-- `updateTag(markerId: string, newTag: TagDefinition)`: Update an existing highlight with a new tag. This changes both the visual appearance and the underlying `data-tag-id`. Returns a `HiLiteData` object containing the updated tag's data, which can be used to update the tag in your database.
-
-- `getAllTags()`: Get all highlights as an array of **HiLiteData** type:
+- *READ* : `getAllTags()`: Get all highlights as an array of **HiLiteData** type:
   ```ts
   type HiLiteData = {
     markerId: string;
@@ -497,7 +509,11 @@ const tagDefs = [
   };
   ```
 
-- `restoreTags(tags: HiLiteData[])`: Restore highlights from a saved array.
+- *UPDATE* : `updateTag(markerId: string, newTag: TagDefinition)`: Update an existing highlight with a new tag. This changes both the visual appearance and the underlying `data-tag-id`. Returns a `HiLiteData` object containing the updated tag's data, which can be used to update the tag in your database.
+
+- *DELETE* : `removeTag(markerId: string)`: Remove a specific highlight by marker id. Returns a `HiLiteData` object containing the removed tag's data, which can be used to remove the tag from your database.
+
+- *RESTORE* : `restoreTags(tags: HiLiteData[])`: Restore highlights from a saved array.
 
 ### Types
 

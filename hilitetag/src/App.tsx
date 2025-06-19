@@ -45,8 +45,24 @@ function App() {
   // Handler to remove selected tag
   const handleRemoveTag = () => {
     if (selectedMarkerId && ref.current) {
-      ref.current.removeTag(selectedMarkerId);
+      const removedTagData = ref.current.removeTag(selectedMarkerId);
+      if (removedTagData) {
+        console.log("Removed Tag Data:", removedTagData);
+        // Here you can sync with your database
+        // await deleteTagFromDatabase(removedTagData);
+      }
       setSelectedMarkerId(null);
+    }
+  };
+
+  // Handler to update selected tag
+  const handleUpdateTag = (newTag: TagDefinition) => {
+    if (ref.current && selectedMarkerId) {
+      const updatedTagData = ref.current.updateTag(selectedMarkerId, newTag);
+      if (updatedTagData) {
+        console.log("Updated Tag Data:", updatedTagData);
+      }
+      setSelectedMarkerId(null); // Clear selection after update
     }
   };
 
@@ -59,17 +75,6 @@ function App() {
       ref.current?.restoreTags(tagsJson);
     } else {
       alert("Failed to load tag.json");
-    }
-  };
-
-  // Handler to update selected tag
-  const handleUpdateTag = (newTag: TagDefinition) => {
-    if (ref.current && selectedMarkerId) {
-      const updatedTagData = ref.current.updateTag(selectedMarkerId, newTag);
-      if (updatedTagData) {
-        console.log("Updated Tag Data:", updatedTagData);
-      }
-      setSelectedMarkerId(null); // Clear selection after update
     }
   };
 

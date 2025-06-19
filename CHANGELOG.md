@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.2] - 2025-06-19
+
+### Added
+- Complete CRUD operation support with HiLiteData return values:
+  - Create: Enhanced `hiliteTag` returns creation data
+  - Read: Improved `getAllTags` for comprehensive tag retrieval
+  - Update: Enhanced `updateTag` returns updated tag data
+  - Delete: New return value for `removeTag` with deletion data
+- Comprehensive database synchronization support
+- Full TypeScript type safety for all operations
+
+### Changed
+- `removeTag` now returns HiLiteData for better database integration
+- Updated documentation with detailed CRUD operation examples
+- Enhanced code examples showing database synchronization
+- Step-by-step guiding for each CRUD operation
+
+---
+
 ## [1.3.1] - 2025-06-19
 
 ### Added
