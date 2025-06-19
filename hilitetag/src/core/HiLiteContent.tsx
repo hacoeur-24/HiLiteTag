@@ -28,8 +28,83 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Handle marker hover
+  const handleMarkerMouseEnter = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains("marker")) {
+      const markerId = target.getAttribute('data-marker-id');
+      const tagId = target.getAttribute('data-tag-id');
+      if (tagId && tags && markerId) {
+        const tag = tags.getById(tagId);
+        // Don't apply hover color if the marker is selected
+        if (tag.hoverColor && markerId !== selectedMarkerId) {
+          const container = containerRef.current;
+          if (container) {
+            const relatedMarkers = container.querySelectorAll(`.marker[data-marker-id="${markerId}"]`);
+            relatedMarkers.forEach((marker: Element) => {
+              (marker as HTMLElement).style.backgroundColor = tag.hoverColor!;
+            });
+          }
+        }
+      }
+    }
+  };
+
+  const handleMarkerMouseLeave = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains("marker")) {
+      const markerId = target.getAttribute('data-marker-id');
+      const tagId = target.getAttribute('data-tag-id');
+      if (tagId && tags && markerId) {
+        const tag = tags.getById(tagId);
+        // Only restore original color if the marker is not selected
+        if (markerId !== selectedMarkerId) {
+          const container = containerRef.current;
+          if (container) {
+            const relatedMarkers = container.querySelectorAll(`.marker[data-marker-id="${markerId}"]`);
+            relatedMarkers.forEach((marker: Element) => {
+              (marker as HTMLElement).style.backgroundColor = tag.color;
+            });
+          }
+        }
+      }
+    }
+  };
+
+  // Handle document click to clear selection when clicking outside
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // If click is outside any marker, clear selection
+      if (!target.closest('.marker') && onMarkerSelect) {
+        onMarkerSelect(null);
+      }
+    };
+
+    document.addEventListener('click', handleDocumentClick);
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, [onMarkerSelect]);
+
+  // Set up event listeners for hover
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Use event delegation for better performance
+    container.addEventListener('mouseenter', handleMarkerMouseEnter, true);
+    container.addEventListener('mouseleave', handleMarkerMouseLeave, true);
+
+    return () => {
+      container.removeEventListener('mouseenter', handleMarkerMouseEnter, true);
+      container.removeEventListener('mouseleave', handleMarkerMouseLeave, true);
+    };
+  }, [tags, selectedMarkerId]);
+
   // Add click handler
   const handleMarkerClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent document click handler from firing
     const target = e.target as HTMLElement;
     if (target.classList.contains("marker")) {
       // Find all markers at the clicked position
@@ -492,8 +567,7 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
   return (
     <div 
       ref={containerRef} 
-      onClick={onMarkerSelect ? handleMarkerClick : undefined}
-      style={{ cursor: onMarkerSelect ? 'pointer' : undefined }}
+      onClick={handleMarkerClick}
     >
       {children}
     </div>

@@ -15,7 +15,19 @@ export function wrapRangeWithMarkers(
 ): MarkerResult | undefined {
   // Use provided marker ID or generate a new one
   const markerId = providedMarkerId || nanoid(10);
-  const tagId = tag.id;
+
+  function createMarkerElement(): HTMLElement {
+    const marker = document.createElement("span");
+    marker.classList.add("marker");
+    marker.setAttribute("data-marker-id", markerId);
+    marker.setAttribute("data-tag-id", tag.id);
+    marker.style.backgroundColor = tag.color;
+    if (tag.style) {
+      Object.assign(marker.style, tag.style);
+    }
+    return marker;
+  }
+
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 
   // Phase 1: Collect all text nodes within the range and their offsets
@@ -120,15 +132,7 @@ export function wrapRangeWithMarkers(
     // Only wrap non-empty segments (avoid wrapping empty strings)
     if (middle.length === 0) continue;
 
-    const span = document.createElement("span");
-    span.setAttribute("data-marker-id", markerId);
-    span.setAttribute("data-tag-id", tagId);
-    span.className = "marker";
-    // Apply tag color and custom style
-    span.style.background = tag.color;
-    if (tag.style) {
-      Object.assign(span.style, tag.style);
-    }
+    const span = createMarkerElement();
 
     // Only apply marker-start to the first non-empty segment
     if (idx === firstNonEmptyIdx) {

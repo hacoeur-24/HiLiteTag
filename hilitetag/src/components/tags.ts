@@ -4,6 +4,7 @@ export type TagDefinition = {
   id: string;
   color: string;
   selectedColor: string; // Color to use when tag is selected
+  hoverColor?: string;  // Optional color to use when tag is hovered
   style?: CSSProperties; // Optional custom style
 };
 

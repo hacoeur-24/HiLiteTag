@@ -15,13 +15,15 @@ function App() {
     { 
       id: "1", 
       color: "rgba(255, 255, 0, 0.4)", 
-      selectedColor: "rgba(255, 255, 0, 0.8)", 
+      selectedColor: "rgba(255, 255, 0, 0.9)",
+      hoverColor: "rgba(255, 255, 0, 0.6)", // Optional hover color 
       style: { fontWeight: "bold" }
     },
-    { 
-      id: "2", 
-      color: "rgba(255, 100, 100, 0.4)", 
-      selectedColor: "rgba(255, 100, 100, 0.8)", 
+    {
+      id: "2",
+      color: "rgba(255, 100, 100, 0.4)",
+      selectedColor: "rgba(255, 100, 100, 0.9)",
+      hoverColor: "rgba(255, 100, 100, 0.6)", // Optional hover color
       style: { fontStyle: "italic" }
     }
   ];
