@@ -27,6 +27,14 @@ function App() {
   ];
   const tags = new HiLiteTags(tagDefs);
 
+  // Handler to highlight a tag
+  const handleHiliteTag = (tag: TagDefinition) => {
+    const tagData = ref.current.hiliteTag(tag);
+    if (tagData) {
+      console.log("Tag Data:", tagData);
+    }
+  };
+
   // Handler for when a tag is selected
   const handleTagSelect = (markerId: string | null) => {
     setSelectedMarkerId(markerId);
@@ -55,7 +63,10 @@ function App() {
   // Handler to update selected tag
   const handleUpdateTag = (newTag: TagDefinition) => {
     if (ref.current && selectedMarkerId) {
-      ref.current.updateTag(selectedMarkerId, newTag);
+      const updatedTagData = ref.current.updateTag(selectedMarkerId, newTag);
+      if (updatedTagData) {
+        console.log("Updated Tag Data:", updatedTagData);
+      }
       setSelectedMarkerId(null); // Clear selection after update
     }
   };
@@ -64,7 +75,7 @@ function App() {
     <div>
       <img src="./src/highlighter.svg" alt="" width={50} height={50} style={{ padding: 16 }} />
       <div className="control-container" style={{ justifyContent: "space-between", display: "flex" }}>
-        <button onClick={() => ref.current?.hiliteTag(tags.getById("1"))}>Highlight as tag-1</button>
+        <button onClick={() => handleHiliteTag(tags.getById("1"))}>Highlight as tag-1</button>
         <button onClick={() => handleUpdateTag(tags.getById("2"))}>Update tag as tag-2</button>
         <button onClick={handleRemoveTag} disabled={!selectedMarkerId}>Remove Selected Tag</button>
         <button onClick={() => setShowAllTags(prev => !prev)}>
@@ -77,8 +88,8 @@ function App() {
         ref={ref}
         tags={tags}
         autoWordBoundaries
-        autoTag
         overlapTag
+        autoTag
         defaultTag={tags.getById("1")}
         selectedMarkerId={selectedMarkerId}
         onMarkerSelect={handleTagSelect}

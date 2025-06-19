@@ -1,13 +1,18 @@
 import { nanoid } from "nanoid";
 import type { TagDefinition } from "../core/tags";
 
+export type MarkerResult = {
+  markerId: string;
+  text: string;
+};
+
 export function wrapRangeWithMarkers(
   range: Range,
   root: HTMLElement,
   allowOverlap: boolean,
   tag: TagDefinition,
   providedMarkerId?: string
-) {
+): MarkerResult | undefined {
   // Use provided marker ID or generate a new one
   const markerId = providedMarkerId || nanoid(10);
   const tagId = tag.id;
@@ -46,7 +51,7 @@ export function wrapRangeWithMarkers(
   const trimmed = selectedText.trim();
   if (!trimmed) {
     // Only whitespace selected, do nothing
-    return;
+    return undefined;
   }
 
   // Adjust range to exclude leading/trailing whitespace
@@ -139,4 +144,9 @@ export function wrapRangeWithMarkers(
     if (after) parent.insertBefore(document.createTextNode(after), node);
     parent.removeChild(node);
   }
+
+  return {
+    markerId,
+    text: trimmed
+  };
 }

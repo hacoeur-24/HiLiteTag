@@ -94,13 +94,55 @@ export const HiLiteContent = forwardRef(({
     if (autoWordBoundaries) {
       range = expandRangeToWordBoundaries(range);
     }
-    wrapRangeWithMarkers(range, containerRef.current, !!overlapTag, tag);
+    const result = wrapRangeWithMarkers(range, containerRef.current, !!overlapTag, tag);
+
+    // Calculate HiLiteData for the newly created tag
+    if (result && containerRef.current) {
+      // Collect all text nodes before the start marker to calculate beginIndex
+      const allTextNodes = getTextNodes(containerRef.current);
+      let beginIndex = 0;
+      let endIndex = 0;
+      let foundStart = false;
+
+      for (let node of allTextNodes) {
+        // If we haven't found the start marker yet, add to beginIndex
+        if (!foundStart) {
+          // Check if this text node is before our marker
+          const closestMarker = node.parentElement?.closest('.marker');
+          if (!closestMarker || closestMarker.getAttribute('data-marker-id') !== result.markerId) {
+            beginIndex += node.textContent?.length || 0;
+          } else {
+            foundStart = true;
+          }
+        }
+        
+        // Add to endIndex until we find our end marker
+        const length = node.textContent?.length || 0;
+        endIndex += length;
+        
+        // Check if this is our end marker
+        const closestMarker = node.parentElement?.closest('.marker');
+        if (closestMarker?.getAttribute('data-marker-id') === result.markerId && 
+            closestMarker.classList.contains('marker-end')) {
+          break;
+        }
+      }
+
+      return {
+        markerId: result.markerId,
+        tagId: tag.id,
+        text: result.text,
+        beginIndex,
+        endIndex
+      } as HiLiteData;
+    }
+    return undefined;
   };
 
   // Expose hiliteTag, removeTag, getAllTags, restoreTags, and updateTag via ref
   useImperativeHandle(ref, () => ({
     hiliteTag: (tag?: TagDefinition) => {
-      performHilite(tag || defaultTag);
+      return performHilite(tag || defaultTag);
     },
     removeTag: (markerId: string) => {
       if (!containerRef.current) return;
@@ -138,6 +180,48 @@ export const HiLiteContent = forwardRef(({
           Object.assign(el.style, newTag.style);
         }
       });
+
+      // Calculate HiLiteData for the updated tag
+      const allTextNodes = getTextNodes(containerRef.current);
+      let beginIndex = 0;
+      let endIndex = 0;
+      let foundStart = false;
+      let text = '';
+
+      for (let node of allTextNodes) {
+        // If we haven't found the start marker yet, add to beginIndex
+        if (!foundStart) {
+          // Check if this text node is before our marker
+          const closestMarker = node.parentElement?.closest('.marker');
+          if (!closestMarker || closestMarker.getAttribute('data-marker-id') !== markerId) {
+            beginIndex += node.textContent?.length || 0;
+          } else {
+            foundStart = true;
+            text = node.textContent || '';
+          }
+        } else {
+          // We're between start and end markers, collect text
+          text += node.textContent || '';
+        }
+        
+        // Add to endIndex until we find our end marker
+        endIndex += node.textContent?.length || 0;
+        
+        // Check if this is our end marker
+        const closestMarker = node.parentElement?.closest('.marker');
+        if (closestMarker?.getAttribute('data-marker-id') === markerId && 
+            closestMarker.classList.contains('marker-end')) {
+          break;
+        }
+      }
+
+      return {
+        markerId,
+        tagId: newTag.id,
+        text: text.trim(),
+        beginIndex,
+        endIndex
+      } as HiLiteData;
     },
     getAllTags: () => {
       if (!containerRef.current) {
