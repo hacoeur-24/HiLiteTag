@@ -413,9 +413,38 @@ const handleRestoreTags = async () => {
 
 ## Customization
 
-You can fully customize the appearance of your tags using the `style` property in your `TagDefinition`. If you want to add borders or rounded corners, use the `marker-start` and `marker-end` classes to only apply border-radius or border styles to the start and end of a tag. This ensures that highlights spanning multiple nodes look visually correct. _For borders you can create your own style to have transparent borders on the right and left side of each markers._
+You can fully customize the appearance of your tags using several properties in your `TagDefinition`:
 
-**Example:**
+### Basic Colors
+- `color`: The default background color of the tag
+- `selectedColor`: The color applied when the tag is selected
+- `hoverColor` (optional): The color applied when hovering over any part of the tag
+
+The `hoverColor` property provides immediate visual feedback to users by highlighting all parts of a tag when hovering over any of its segments. This is particularly useful for:
+- Improving user experience by clearly showing the full extent of a tag
+- Making it easier to identify related segments of text that belong to the same tag
+- Providing visual confirmation before selecting or removing a tag
+
+### Custom Styling
+You can use the `style` property for additional CSS customization. When working with borders or rounded corners, use the `marker-start` and `marker-end` classes to properly style the beginning and end of a tag. This ensures that highlights spanning multiple nodes look visually correct. _For borders you can create your own style to have transparent borders on the right and left side of each markers._
+
+**Example with all customization options:**
+
+```tsx
+const tagDefs = [
+  {
+    id: "important",
+    color: "rgba(255, 255, 0, 0.3)",      // Light yellow background
+    selectedColor: "rgba(255, 255, 0, 0.9)", // Darker yellow when selected
+    hoverColor: "rgba(255, 255, 0, 0.4)",   // Medium yellow on hover
+    style: {
+      fontWeight: "bold"
+    }
+  }
+];
+```
+
+**Example CSS for borders and rounded corners:**
 
 ```css
 .marker {
@@ -469,6 +498,21 @@ You can fully customize the appearance of your tags using the `style` property i
   ```
 
 - `restoreTags(tags: HiLiteData[])`: Restore highlights from a saved array.
+
+### Types
+
+#### TagDefinition
+```typescript
+type TagDefinition = {
+  id: string;            // Unique identifier for the tag
+  color: string;         // Default background color
+  selectedColor: string; // Color when tag is selected
+  hoverColor?: string;   // Optional color when hovering over the tag
+  style?: CSSProperties; // Optional custom CSS styles
+};
+```
+
+The `hoverColor` and `style` properties are optional and provides better visual feedback and flexibilty for a custom design.
 
 ## Best Practices & Warnings
 
