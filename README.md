@@ -7,25 +7,34 @@ Follow the project on [GitHub 🔗](https://github.com/hacoeur-24/HiLiteTag)
 ---
 
 ## Table of Contents
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Tags vs Markers](#tags-vs-markers)
-- [How to use HiLiteTag](#how-to-use-hilitetag)
-  - [1. Define Your Tags](#1-define-your-tags)
-  - [2. Wrap content inside HiLiteContent](#2-wrap-content-inside-hilitecontent)
-  - [3. Creating Tags](#3-creating-tags)
-  - [4. Selecting Tags](#4-selecting-tags)
-  - [5. Removing Tags](#5-removing-tags)
-  - [6. Updating Tags](#6-updating-tags)
-  - [7. Getting Tags (Serialization)](#7-getting-tags-serialization)
-  - [8. Restoring Tags from stored tags](#8-restoring-tags-from-stored-tags)
-- [Customization](#customization)
-- [API Reference](#api-reference)
-- [Best Practices & Warnings](#best-practices--warnings)
-- [Developer Experience & Debugging](#developer-experience--debugging)
-- [Features](#features)
-- [Local Development & Example](#local-development--example)
-- [License](#license)
+- [HiLiteTag](#hilitetag)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Quick Start](#quick-start)
+  - [Tags vs Markers](#tags-vs-markers)
+  - [How to use HiLiteTag](#how-to-use-hilitetag)
+    - [1. Define Your Tags](#1-define-your-tags)
+    - [2. Wrap content inside HiLiteContent](#2-wrap-content-inside-hilitecontent)
+    - [3. Creating Tags](#3-creating-tags)
+    - [4. Selecting Tags](#4-selecting-tags)
+    - [5. Removing Tags](#5-removing-tags)
+    - [6. Updating Tags](#6-updating-tags)
+    - [7. Getting Tags (Serialization)](#7-getting-tags-serialization)
+    - [8. Restoring Tags from stored tags](#8-restoring-tags-from-stored-tags)
+  - [Customization](#customization)
+    - [Basic Colors](#basic-colors)
+    - [Custom Styling](#custom-styling)
+  - [API Reference](#api-reference)
+    - [HiLiteContent Props](#hilitecontent-props)
+    - [HiLiteTags](#hilitetags)
+    - [HiLiteContent Ref Methods (CRUD + RESTORE)](#hilitecontent-ref-methods-crud--restore)
+    - [Types](#types)
+      - [TagDefinition](#tagdefinition)
+  - [Best Practices \& Warnings](#best-practices--warnings)
+  - [Developer Experience \& Debugging](#developer-experience--debugging)
+  - [Features](#features)
+  - [Local Development \& Example](#local-development--example)
+  - [License](#license)
 
 ---
 
@@ -548,7 +557,7 @@ The `hoverColor` and `style` properties are optional and provides better visual 
 HiLiteTag provides comprehensive debugging information through browser console warnings to help you identify and fix issues during development or in production:
 
 - Invalid tag definitions (missing properties, duplicate IDs)
-- Empty or invalid selections
+- Invalid selections
 - Selection outside the component
 - Invalid data structures when restoring tags
 - Missing required props

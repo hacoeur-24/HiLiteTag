@@ -188,7 +188,6 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
     }
     let range = sel.getRangeAt(0);
     if (range.collapsed) {
-      console.warn('Empty text selection. Select some text to highlight.');
       return;
     }
     if (!containerRef.current?.contains(range.commonAncestorContainer)) {
