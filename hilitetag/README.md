@@ -2,6 +2,8 @@
 
 A flexible, modern React component for text highlighting and tagging in complex HTML. Supports custom tags, colors, styles, selection/removal, overlapping tags, and easy serialization for storage.
 
+Follow the project on [GitHub 🔗](https://github.com/hacoeur-24/HiLiteTag)
+
 ---
 
 ## Table of Contents
@@ -11,11 +13,12 @@ A flexible, modern React component for text highlighting and tagging in complex 
 - [How to use HiLiteTag](#how-to-use-hilitetag)
   - [1. Define Your Tags](#1-define-your-tags)
   - [2. Wrap content inside HiLiteContent](#2-wrap-content-inside-hilitecontent)
-  - [3. Selecting Tags](#3-selecting-tags)
-  - [4. Removing Tags](#4-removing-tags)
-  - [5. Updating Tags](#5-updating-tags)
-  - [6. Getting Tags (Serialization)](#6-getting-tags-serialization)
-  - [7. Restoring Tags from stored tags](#7-restoring-tags-from-stored-tags)
+  - [3. Creating Tags](#3-creating-tags)
+  - [4. Selecting Tags](#4-selecting-tags)
+  - [5. Removing Tags](#5-removing-tags)
+  - [6. Updating Tags](#6-updating-tags)
+  - [7. Getting Tags (Serialization)](#7-getting-tags-serialization)
+  - [8. Restoring Tags from stored tags](#8-restoring-tags-from-stored-tags)
 - [Customization](#customization)
 - [API Reference](#api-reference)
 - [Best Practices & Warnings](#best-practices--warnings)
@@ -44,7 +47,32 @@ Import the main components and types:
 
 ```tsx
 import { HiLiteContent, HiLiteTags } from "hilitetag";
-import type { TagDefinition, HiLiteData } from "hilitetag";
+import type { TagDefinition, HiLiteData, HiLiteRef } from "hilitetag";
+
+function App() {
+  // Use HiLiteRef type for better TypeScript support and autocompletion
+  const hiliteRef = useRef<HiLiteRef>(null);
+
+  // Example: TypeScript will now provide full type hints for all methods
+  const handleHighlight = () => {
+    if (hiliteRef.current) {
+      const tagData = hiliteRef.current.hiliteTag(someTag); // TypeScript knows this returns HiLiteData | undefined
+      if (tagData) {
+        // TypeScript knows all the properties available on tagData
+        console.log(tagData.markerId, tagData.beginIndex, tagData.text);
+      }
+    }
+  };
+
+  return (
+    <HiLiteContent
+      ref={hiliteRef} // TypeScript enforces correct ref type
+      // ...other props
+    >
+      // ...content
+    </HiLiteContent>
+  );
+}
 ```
 
 ---
@@ -87,11 +115,12 @@ All marker elements for a tag share the same `markerId`, allowing you to select 
 
 1.	Define your Tags
 2.	Wrap content inside HiLiteContent
-3.	Selecting Tags 
-4.  Removing Tags
-5.  Updating Tags
-6.	Getting Tags (Serialization)
-7.	Restoring Tags from stored tags
+3.	Selecting Tags
+4.  Creating Tags
+5.  Removing Tags
+6.  Updating Tags
+7.	Getting Tags (Serialization)
+8.	Restoring Tags from stored tags
 
 ✅ Built-in TypeScript support – with helpful types like TagDefinition and HiLiteData.
 
@@ -134,11 +163,53 @@ function App() {
 
   // ...tagDefs and tags as above...
 
-  // Highlight selected text with a tag
+  return (
+    <div>
+      <HiLiteContent
+        ref={ref}
+        tags={tags}
+        autoWordBoundaries
+      >
+        <div>
+          <h1>Welcome to HiLiteTag</h1>
+          <p>Thank you for <b>supporting</b> this project.</p>
+        </div>
+      </HiLiteContent>
+    </div>
+  );
+}
+```
+
+---
+
+### 3. Creating Tags
+
+To create a tag simply use the method on ref called hiliteTag(tag), it will add the tag to the selected Text.
+
+```tsx
+import { useRef } from "react";
+import { HiLiteContent, HiLiteTags, type TagDefinition } from "hilitetag";
+
+function App() {
+  const ref = useRef<any>(null);
+
+  // ...tagDefs and tags...
+
+  // Highlight selected text with a tag and get the tag data
   const handleHighlightTag = (tagId: string) => {
     const tag = tags.getById(tagId);
     if (ref.current && tag) {
-      ref.current.hiliteTag(tag);
+      const tagData = ref.current.hiliteTag(tag);
+      if (tagData) {
+        console.log('New tag data:', tagData);
+        // You can save tagData to your database here
+        // tagData is of type HiLiteData containing:
+        // - markerId: string
+        // - tagId: string
+        // - text: string
+        // - beginIndex: number
+        // - endIndex: number
+      }
     }
   };
 
@@ -162,12 +233,15 @@ function App() {
 
 ---
 
-### 3. Selecting Tags
+### 4. Selecting Tags
 
 The library includes built-in support for selecting tags. Simply provide the `onMarkerSelect` prop and manage the selected state:
 
 ```tsx
+const ref = useRef<any>(null);
 const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+
+// ...
 
 return (
   <>
@@ -206,10 +280,12 @@ When `onMarkerSelect` is provided:
 
 ---
 
-### 4. Removing Tags
+### 5. Removing Tags
 
 ```tsx
 const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+
+// ...
 
 // Remove selected marker
 const handleRemoveTag = () => {
@@ -242,15 +318,25 @@ return (
 
 ---
 
-### 5. Updating Tags
+### 6. Updating Tags
 
 You can update existing highlights to use a different tag. This is useful for changing the appearance or meaning of existing highlights:
 
 ```tsx
-// Handler to update selected tag
+// Handler to update selected tag and get the updated tag data
 const handleUpdateTag = (newTag: TagDefinition) => {
   if (ref.current && selectedMarkerId) {
-    ref.current.updateTag(selectedMarkerId, newTag);
+    const updatedTagData = ref.current.updateTag(selectedMarkerId, newTag);
+    if (updatedTagData) {
+      console.log('Updated tag data:', updatedTagData);
+      // You can update the tag in your database here
+      // updatedTagData is of type HiLiteData containing:
+      // - markerId: string
+      // - tagId: string (this will be the new tag's id)
+      // - text: string
+      // - beginIndex: number
+      // - endIndex: number
+    }
     setSelectedMarkerId(null); // Clear selection after update
   }
 };
@@ -260,7 +346,9 @@ const handleUpdateTag = (newTag: TagDefinition) => {
 </button>
 ```
 
-### 6. Getting Tags (Serialization)
+---
+
+### 7. Getting Tags (Serialization)
 
 You can extract all highlights for storage or sync:
 
@@ -298,7 +386,9 @@ Example output:
 ]
 ```
 
-### 7. Restoring Tags from stored tags
+---
+
+### 8. Restoring Tags from stored tags
 
 You can restore highlights from a saved JSON array (from `getAllTags`). This is useful for loading highlights from a database or file. For this use the exported `HiLiteData` type for type safety when restoring tags:
 
@@ -361,11 +451,11 @@ You can fully customize the appearance of your tags using the `style` property i
 - `.getAll()` : Get all tags.
 
 ### HiLiteContent Ref Methods
-- `hiliteTag(tag?: TagDefinition)`: Highlight the current selection with the given tag.
+- `hiliteTag(tag?: TagDefinition)`: Highlight the current selection with the given tag. Returns a `HiLiteData` object containing the newly created tag's data, which can be used to save the tag to your database.
 
 - `removeTag(markerId: string)`: Remove a specific highlight by marker id.
 
-- `updateTag(markerId: string, newTag: TagDefinition)`: Update an existing highlight with a new tag. This changes both the visual appearance and the underlying `data-tag-id`.
+- `updateTag(markerId: string, newTag: TagDefinition)`: Update an existing highlight with a new tag. This changes both the visual appearance and the underlying `data-tag-id`. Returns a `HiLiteData` object containing the updated tag's data, which can be used to update the tag in your database.
 
 - `getAllTags()`: Get all highlights as an array of **HiLiteData** type:
   ```ts
@@ -395,7 +485,7 @@ You can fully customize the appearance of your tags using the `style` property i
 
 ## Developer Experience & Debugging
 
-HiLiteTag provides comprehensive debugging information through browser console warnings to help you identify and fix issues during development. The library will warn you about:
+HiLiteTag provides comprehensive debugging information through browser console warnings to help you identify and fix issues during development or in production:
 
 - Invalid tag definitions (missing properties, duplicate IDs)
 - Empty or invalid selections
