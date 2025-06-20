@@ -206,7 +206,7 @@ function App() {
 
   // Highlight selected text with a tag and get the tag data
   const handleHighlightTag = (tagId: string) => {
-  if (!tag || !ref.current) return;
+  if (!tags || !ref.current) return;
 
     const tag = tags.getById(tagId);
     const tagData = ref.current.hiliteTag(tag);
