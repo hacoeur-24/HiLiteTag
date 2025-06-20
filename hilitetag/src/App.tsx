@@ -78,11 +78,25 @@ function App() {
     }
   };
 
+  // Handle adding multiple tags
+  const handleAddMultipleTags = () => {
+    // This will work for applying multiple tags to the same selection
+    ['1', '2'].forEach(tagId => {
+      const tag = tags.getById(tagId);
+      const tagData = ref.current.hiliteTag(tag);
+      if (tagData) {
+        // Handle the tag data (e.g., save to database)
+        console.log('Created tag:', tagData);
+      }
+    });
+  };
+
   return (
     <div>
       <img src="./src/highlighter.svg" alt="" width={50} height={50} style={{ padding: 16 }} />
       <div className="control-container" style={{ justifyContent: "space-between", display: "flex" }}>
         <button onClick={() => handleHiliteTag(tags.getById("1"))}>Highlight as tag-1</button>
+        <button onClick={handleAddMultipleTags}>Add Multiple Tags (tag-1 & tag-2)</button>
         <button onClick={() => handleUpdateTag(tags.getById("2"))}>Update tag as tag-2</button>
         <button onClick={handleRemoveTag} disabled={!selectedMarkerId}>Remove Selected Tag</button>
         <button onClick={() => setShowAllTags(prev => !prev)}>
@@ -96,7 +110,6 @@ function App() {
         tags={tags}
         autoWordBoundaries
         overlapTag
-        autoTag
         defaultTag={tags.getById("1")}
         selectedMarkerId={selectedMarkerId}
         onMarkerSelect={handleTagSelect}

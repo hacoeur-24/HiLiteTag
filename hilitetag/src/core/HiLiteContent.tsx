@@ -194,10 +194,58 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
       console.warn('Selected text is outside the HiLiteContent component');
       return;
     }
+
+    // Store the selection details before any DOM modifications
+    const rangeDetails = {
+      startContainer: range.startContainer,
+      startOffset: range.startOffset,
+      endContainer: range.endContainer,
+      endOffset: range.endOffset,
+      text: range.toString()
+    };
+    
     if (autoWordBoundaries) {
       range = expandRangeToWordBoundaries(range);
+      // Update details if word boundaries were expanded
+      rangeDetails.startOffset = range.startOffset;
+      rangeDetails.endOffset = range.endOffset;
+      rangeDetails.text = range.toString();
     }
+    
     const result = wrapRangeWithMarkers(range, containerRef.current, !!overlapTag, tag);
+    
+    // Restore selection for potential subsequent tag applications
+    if (!autoTag && containerRef.current) {  // Don't restore selection in autoTag mode
+      // Find text nodes that contain our original content
+      const walker = document.createTreeWalker(containerRef.current, NodeFilter.SHOW_TEXT);
+      let startNode: Text | null = null;
+      let endNode: Text | null = null;
+      let node: Text | null;
+      
+      // Look for nodes containing our start and end points
+      while ((node = walker.nextNode() as Text)) {
+        if (!startNode && node.textContent?.includes(rangeDetails.text.substring(0, 20))) {
+          startNode = node;
+        }
+        if (!endNode && node.textContent?.includes(rangeDetails.text.slice(-20))) {
+          endNode = node;
+        }
+        if (startNode && endNode) break;
+      }
+
+      // If we found our nodes, create a new range
+      if (startNode && endNode) {
+        try {
+          const newRange = document.createRange();
+          newRange.setStart(startNode, 0);
+          newRange.setEnd(endNode, endNode.length);
+          sel.removeAllRanges();
+          sel.addRange(newRange);
+        } catch (error) {
+          console.warn('Failed to restore selection, but tag was created successfully');
+        }
+      }
+    }
 
     // Calculate HiLiteData for the newly created tag
     if (result && containerRef.current) {

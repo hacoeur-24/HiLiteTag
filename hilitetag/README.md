@@ -193,7 +193,9 @@ function App() {
 
 ### 3. Creating Tags
 
-To create a tag simply use the method on ref called `hiliteTag(tag)`, it will add the tag to the selected Text. The `hiliteTag` method returns a `HiLiteData` object containing information about the removed tag, similar to `removeTag` and `updateTag`. This makes it easy to sync removals with your database.
+To create a tag simply use the method on ref called `hiliteTag(tag)`, it will add the tag to the selected Text. The `hiliteTag` method returns a `HiLiteData` object containing information about the tag, similar to `removeTag` and `updateTag`. This makes it easy to sync with your database.
+
+#### Single Tag Creation
 
 ```tsx
 import { useRef } from "react";
@@ -206,7 +208,7 @@ function App() {
 
   // Highlight selected text with a tag and get the tag data
   const handleHighlightTag = (tagId: string) => {
-  if (!tags || !ref.current) return;
+    if (!tags || !ref.current) return;
 
     const tag = tags.getById(tagId);
     const tagData = ref.current.hiliteTag(tag);
@@ -226,10 +228,12 @@ function App() {
   return (
     <div>
       <button onClick={() => handleHighlightTag("1")}>Highlight as tag 1</button>
+      <button onClick={handleMultipleTags}>Add Multiple Tags</button>
       <HiLiteContent
         ref={ref}
         tags={tags}
         autoWordBoundaries
+        overlapTag  // Enable overlapping tags for multiple tag support
       >
         <div>
           <h1>Welcome to HiLiteTag</h1>
@@ -240,6 +244,33 @@ function App() {
   );
 }
 ```
+
+#### Multiple Tags on Same Selection
+
+You can apply multiple tags to the same selected text. The library maintains the selection between tag applications, making it easy to create overlapping tags:
+
+```tsx
+// Apply multiple tags to the same selection
+const handleAddMultipleTags = () => {
+  // This will work for applying multiple tags to the same selection
+  ['1', '2'].forEach(tagId => {
+    const tag = tags.getById(tagId);
+    const tagData = ref.current.hiliteTag(tag);
+    if (tagData) {
+      // Handle the tag data (e.g., save to database)
+      console.log('Created tag:', tagData);
+    }
+  });
+};
+
+<button onClick={handleMultipleTags}>Add Multiple Tags</button>
+```
+
+This is particularly useful for:
+- Applying multiple categories to the same text
+- Creating tag combinations (e.g., "important" + "urgent")
+- Building complex tagging systems with overlapping meanings
+- Supporting multi-label classification of text
 
 ---
 

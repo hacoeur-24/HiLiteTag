@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.4] - 2025-06-19
+
+### Added
+- Support for applying multiple tags to the same text selection
+- Improved marker state management for multiple tag scenarios
+
+### Changed
+- Refactored `performHilite` to maintain selection after DOM updates
+- Updated documentation with examples for creating multiple tags
+
+---
+
 ## [1.3.3] - 2025-06-19
 
 ### Changed
