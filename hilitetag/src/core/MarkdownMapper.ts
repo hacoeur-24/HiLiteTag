@@ -118,12 +118,12 @@ export class MarkdownMapper {
           let actualEnd = end;
           
           // Look back for opening formatting
-          while (actualStart > 0 && this.isPartOfSameFormattingBlock(actualStart - 1, searchText)) {
+          while (actualStart > 0 && this.isPartOfSameFormattingBlock(actualStart - 1)) {
             actualStart--;
           }
           
           // Look forward for closing formatting
-          while (actualEnd < this.markdownSource.length && this.isPartOfSameFormattingBlock(actualEnd, searchText)) {
+          while (actualEnd < this.markdownSource.length && this.isPartOfSameFormattingBlock(actualEnd)) {
             actualEnd++;
           }
           
@@ -173,15 +173,11 @@ export class MarkdownMapper {
   /**
    * Check if a position is part of the same formatting block
    */
-  private isPartOfSameFormattingBlock(pos: number, text: string): boolean {
+  private isPartOfSameFormattingBlock(pos: number): boolean {
     const char = this.markdownSource[pos];
     // Check for formatting characters that might be part of this text's formatting
     return char === '*' || char === '_' || char === '`';
   }
-  
-
-  
-
   
   /**
    * Convert Markdown source range to HTML text range
