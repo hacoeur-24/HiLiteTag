@@ -54,8 +54,6 @@ export class MarkdownMapper {
     }
     
     this.textContent = textParts.join('');
-    console.log(`HTML text content (first 200 chars): "${this.textContent.substring(0, 200)}"`);
-    console.log(`HTML text content (last 200 chars): "${this.textContent.substring(Math.max(0, this.textContent.length - 200))}"`);
   }
   
   /**
@@ -70,13 +68,10 @@ export class MarkdownMapper {
       return { start: 0, end: 0 };
     }
     
-    console.log(`Searching for text in markdown: "${searchText}"`);
-    
     // First, try to find exact match in markdown
     let index = this.markdownSource.indexOf(searchText);
     
     if (index !== -1) {
-      console.log(`Found exact match at positions [${index}, ${index + searchText.length}]`);
       return { start: index, end: index + searchText.length };
     }
     
@@ -126,10 +121,6 @@ export class MarkdownMapper {
           while (actualEnd < this.markdownSource.length && this.isPartOfSameFormattingBlock(actualEnd)) {
             actualEnd++;
           }
-          
-          console.log(`Found text with formatting at positions [${actualStart}, ${actualEnd}]`);
-          const extracted = this.markdownSource.substring(actualStart, actualEnd);
-          console.log(`Extracted: "${extracted}"`);
           
           return { start: actualStart, end: actualEnd };
         }
