@@ -1,5 +1,47 @@
 # Changelog
 
+## [2.0.0] - 2025-08-11
+
+### Added
+- **Full Markdown content support** - Major new feature for highlighting text in Markdown documents
+  - New `markdownContent` prop as an alternative to HTML children
+  - Automatic rendering of Markdown to HTML using the `marked` library
+  - Tag positions stored as actual Markdown source file positions (including formatting characters)
+  - Support for highlighting text that spans across Markdown formatting (bold, italic, links, etc.)
+  - Complete support for all standard Markdown features:
+    - Headers (H1-H6)
+    - Bold and italic text
+    - Links with URLs
+    - Inline code and code blocks
+    - Lists (ordered and unordered)
+    - Tables
+    - Mixed and nested formatting
+
+### Changed
+- `HiLiteContent` now accepts either `children` (HTML) or `markdownContent` (Markdown string)
+- Enhanced position mapping system to handle both HTML and Markdown content
+- Updated TypeScript types to support the new Markdown mode
+
+### Technical Implementation
+- New `MarkdownMapper` utility class for handling Markdown parsing and position mapping
+- Bidirectional mapping between Markdown source positions and rendered HTML text positions
+- Intelligent handling of Markdown syntax characters during text selection
+- Preservation of exact file positions for database storage and retrieval
+
+### Developer Experience
+- Seamless integration - existing HTML mode continues to work without changes
+- Import Markdown files directly with Vite/Webpack using `import content from "./file.md?raw"`
+- Comprehensive position tracking for accurate tag restoration
+- Full backward compatibility - no breaking changes for existing users
+
+### Documentation
+- Added comprehensive Markdown usage guide to README
+- Updated API reference with new `markdownContent` prop
+- Added examples for both inline Markdown strings and file imports
+- Detailed explanation of how Markdown indexing works
+
+---
+
 ## [1.3.4] - 2025-06-19
 
 ### Added

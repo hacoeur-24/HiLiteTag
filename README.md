@@ -1,6 +1,6 @@
 # HiLiteTag
 
-A flexible, modern React component for text highlighting and tagging in complex HTML. Supports custom tags, colors, styles, selection/removal, overlapping tags, and easy serialization for storage.
+A flexible, modern React component for text highlighting and tagging in complex HTML and Markdown content. Supports custom tags, colors, styles, selection/removal, overlapping tags, and easy serialization for storage.
 
 Follow the project on [GitHub 🔗](https://github.com/hacoeur-24/HiLiteTag)
 
@@ -21,6 +21,7 @@ Follow the project on [GitHub 🔗](https://github.com/hacoeur-24/HiLiteTag)
     - [6. Updating Tags](#6-updating-tags)
     - [7. Getting Tags (Serialization)](#7-getting-tags-serialization)
     - [8. Restoring Tags from stored tags](#8-restoring-tags-from-stored-tags)
+    - [9. Markdown Content Support](#9-markdown-content-support)
   - [Customization](#customization)
     - [Basic Colors](#basic-colors)
     - [Custom Styling](#custom-styling)
@@ -130,6 +131,7 @@ All marker elements for a tag share the same `markerId`, allowing you to select 
 6.  Updating Tags
 7.	Getting Tags (Serialization)
 8.	Restoring Tags from stored tags
+9.  Using Markdown Content (optional)
 
 ✅ Built-in TypeScript support – with helpful types like TagDefinition and HiLiteData.
 
@@ -467,6 +469,139 @@ const handleRestoreTags = async () => {
 
 ---
 
+### 9. Markdown Content Support
+
+HiLiteTag now supports highlighting text in Markdown content. When you provide Markdown content, the library:
+- Renders the Markdown as HTML automatically
+- Allows you to highlight text in the rendered output
+- **Stores tag positions based on the original Markdown source file**
+- Handles text that spans across formatting (bold, italic, links, etc.)
+
+This is particularly useful when you need to:
+- Annotate Markdown documents
+- Store highlights with reference to the source Markdown file
+- Maintain consistency between different Markdown renderers
+
+#### Using Markdown Content
+
+Instead of passing HTML children, provide the `markdownContent` prop with your Markdown string:
+
+```tsx
+import { useRef, useState } from "react";
+import { HiLiteContent, HiLiteTags, type TagDefinition, type HiLiteData } from "hilitetag";
+
+// You can import markdown files directly in Vite/Webpack
+import markdownContent from "./document.md?raw";
+
+function MarkdownExample() {
+  const ref = useRef<any>(null);
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+
+  // Define your tags as usual
+  const tagDefs: TagDefinition[] = [
+    { 
+      id: "1", 
+      color: "rgba(255, 255, 0, 0.4)", 
+      selectedColor: "rgba(255, 255, 0, 0.9)",
+      style: { fontWeight: "bold" }
+    }
+  ];
+  const tags = new HiLiteTags(tagDefs);
+
+  // Or use a markdown string directly
+  const markdownString = `# My Document
+
+  This is a **test document** with *various* formatting.
+  
+  You can highlight text that spans **across bold** and *italic* text.`;
+
+  return (
+    <div>
+      <button onClick={() => ref.current?.hiliteTag(tags.getById("1"))}>
+        Highlight Selection
+      </button>
+      
+      <HiLiteContent
+        ref={ref}
+        tags={tags}
+        markdownContent={markdownString}  // Pass markdown instead of children
+        autoWordBoundaries
+        overlapTag
+        selectedMarkerId={selectedMarkerId}
+        onMarkerSelect={setSelectedMarkerId}
+      />
+    </div>
+  );
+}
+```
+
+#### How Markdown Indexes Work
+
+When using Markdown content, the tag positions (`beginIndex` and `endIndex`) represent the **actual character positions in the original Markdown file**, including all formatting characters:
+
+```tsx
+// Example: If you highlight "test document" in markdown: "This is a **test document** with..."
+const tagData = ref.current?.hiliteTag(tag);
+console.log(tagData);
+// Output:
+// {
+//   markerId: "abc123",
+//   tagId: "1",
+//   text: "test document",
+//   beginIndex: 12,  // Position where "**test document**" starts in the markdown
+//   endIndex: 29     // Position where it ends (including the ** formatting)
+// }
+```
+
+This means:
+- The indexes point to the exact positions in your `.md` file
+- Formatting characters (like `**`, `*`, `[]()`) are included in the position calculation
+- You can use these positions to reference the source Markdown file directly
+
+#### Restoring Markdown Tags
+
+When restoring tags for Markdown content, use the same positions from your stored data:
+
+```tsx
+const handleRestoreMarkdownTags = () => {
+  // These positions reference the actual markdown source
+  const markdownTags: HiLiteData[] = [
+    {
+      markerId: "demo1",
+      tagId: "1",
+      text: "test document",
+      beginIndex: 12,  // Actual position in markdown file
+      endIndex: 29     // Including formatting characters
+    },
+    {
+      markerId: "demo2",
+      tagId: "2",
+      text: "across bold and italic",
+      beginIndex: 150,  // Works even when text spans formatting
+      endIndex: 185
+    }
+  ];
+  
+  ref.current?.restoreTags(markdownTags);
+};
+```
+
+#### Supported Markdown Features
+
+The library correctly handles highlighting across all standard Markdown elements:
+- **Bold** and *italic* text
+- [Links](url) with URLs
+- `Inline code` snippets
+- Headers (# H1, ## H2, etc.)
+- Lists (both ordered and unordered)
+- Tables
+- Code blocks
+- Mixed and nested formatting
+
+The highlighting works seamlessly even when your selection spans multiple formatting elements or crosses paragraph boundaries.
+
+---
+
 ## Customization
 
 You can fully customize the appearance of your tags using several properties in your `TagDefinition`:
@@ -520,7 +655,8 @@ const tagDefs = [
 
 ### HiLiteContent Props
 - `tags: HiLiteTags` (**required**)
-- `children: React.ReactNode` (**required**)
+- `children?: React.ReactNode` (**required** if not using `markdownContent`)
+- `markdownContent?: string` : Markdown string to render and highlight (alternative to `children`)
 - `autoWordBoundaries?: boolean` : To select the complete word automatically
 - `autoTag?: boolean` : Apply a tag whenever a text is selected
 - `defaultTag?: TagDefinition` (required if `autoTag` is true)
@@ -611,6 +747,7 @@ These warnings are non-blocking and only appear during development to help you:
 
 ## Features
 - Tag any text, even across nested HTML.
+- **Full Markdown support** with source file position tracking
 - Supports overlapping and nested tags
 - Smart marker selection (automatically selects inner tags first)
 - Custom tag colors, styles, and selection color.
@@ -618,6 +755,7 @@ These warnings are non-blocking and only appear during development to help you:
 - Serialize all highlights for storage or sync.
 - Restore highlights from JSON.
 - Handles whitespace and word boundaries.
+- Handles text spanning across Markdown formatting (bold, italic, links, etc.)
 - No manual color switching needed for selected markers.
 - Easy integration with your own tag system or database.
 - Built-in marker selection handling
