@@ -1,11 +1,13 @@
-import React, { useImperativeHandle, useRef, forwardRef, useEffect } from "react";
+import React, { useImperativeHandle, useRef, forwardRef, useEffect, useMemo } from "react";
 import { wrapRangeWithMarkers } from "./wrapRangeWithMarkers";
 import { expandRangeToWordBoundaries } from "./selectionUtils";
+import { MarkdownMapper } from "./MarkdownMapper";
 import type { TagDefinition } from "../components/tags";
 import type { HiLiteData, HiLiteRef } from "../components/types";
 
 type HiLiteContentProps = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  markdownContent?: string;
   defaultTag?: TagDefinition;
   autoWordBoundaries?: boolean;
   autoTag?: boolean;
@@ -18,6 +20,7 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
   onMarkerSelect?: (markerId: string | null) => void;
 }>(({ 
   children, 
+  markdownContent,
   defaultTag,
   autoWordBoundaries, 
   autoTag,
@@ -27,6 +30,14 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
   onMarkerSelect,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Create MarkdownMapper instance if markdown content is provided
+  const markdownMapper = useMemo(() => {
+    if (markdownContent) {
+      return new MarkdownMapper(markdownContent);
+    }
+    return null;
+  }, [markdownContent]);
 
   // Handle marker hover
   const handleMarkerMouseEnter = (e: MouseEvent) => {
@@ -279,6 +290,13 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
         }
       }
 
+      // If using markdown, convert HTML text positions to markdown positions
+      if (markdownMapper) {
+        const markdownRange = markdownMapper.mapHtmlRangeToMarkdown(beginIndex, endIndex);
+        beginIndex = markdownRange.start;
+        endIndex = markdownRange.end;
+      }
+
       return {
         markerId: result.markerId,
         tagId: tag.id,
@@ -321,13 +339,23 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
         currIdx += (node.textContent?.length || 0);
       }
 
+      // Calculate endIndex
+      let endIndex = beginIndex + text.length;
+      
+      // If using markdown, convert HTML text positions to markdown positions
+      if (markdownMapper) {
+        const markdownRange = markdownMapper.mapHtmlRangeToMarkdown(beginIndex, endIndex);
+        beginIndex = markdownRange.start;
+        endIndex = markdownRange.end;
+      }
+      
       // Create HiLiteData before removal
       const tagData: HiLiteData = {
         markerId,
         tagId,
         text,
         beginIndex,
-        endIndex: beginIndex + text.length
+        endIndex
       };
 
       // Remove the spans
@@ -417,6 +445,13 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
         }
       }
 
+      // If using markdown, convert HTML text positions to markdown positions
+      if (markdownMapper) {
+        const markdownRange = markdownMapper.mapHtmlRangeToMarkdown(beginIndex, endIndex);
+        beginIndex = markdownRange.start;
+        endIndex = markdownRange.end;
+      }
+      
       return {
         markerId,
         tagId: newTag.id,
@@ -474,12 +509,22 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
               const markerIndex = markerStack.findIndex(m => m.markerId === markerId);
               if (markerIndex !== -1) {
                 const marker = markerStack[markerIndex];
+                let beginIdx = marker.beginIndex;
+                let endIdx = absIdx;
+                
+                // If using markdown, convert HTML text positions to markdown positions
+                if (markdownMapper) {
+                  const markdownRange = markdownMapper.mapHtmlRangeToMarkdown(beginIdx, endIdx);
+                  beginIdx = markdownRange.start;
+                  endIdx = markdownRange.end;
+                }
+                
                 markers.push({
                   markerId: marker.markerId,
                   tagId: marker.tagId,
                   text: marker.text,
-                  beginIndex: marker.beginIndex,
-                  endIndex: absIdx
+                  beginIndex: beginIdx,
+                  endIndex: endIdx
                 });
                 markerStack.splice(markerIndex, 1);
               }
@@ -548,7 +593,15 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
       
       // For each tag, find the nodes covering [beginIndex, endIndex) and wrap
       sortedTags.forEach(tagObj => {
-        const { tagId, beginIndex, endIndex, markerId } = tagObj;
+        let { tagId, beginIndex, endIndex, markerId } = tagObj;
+        
+        // If using markdown, convert markdown positions to HTML text positions
+        if (markdownMapper) {
+          const htmlRange = markdownMapper.mapMarkdownRangeToHtml(beginIndex, endIndex);
+          beginIndex = htmlRange.start;
+          endIndex = htmlRange.end;
+        }
+        
         let tag: TagDefinition | undefined;
         if (tags && typeof tags.getById === 'function') {
           tag = tags.getById(tagId);
@@ -646,12 +699,22 @@ export const HiLiteContent = forwardRef<HiLiteRef, HiLiteContentProps & {
     });
   }, [selectedMarkerId, defaultTag, tags]);
 
+  // Determine what content to render
+  const content = useMemo(() => {
+    if (markdownContent && markdownMapper) {
+      // Render markdown as HTML
+      return <div dangerouslySetInnerHTML={{ __html: markdownMapper.getHtml() }} />;
+    }
+    // Render children as usual
+    return children;
+  }, [markdownContent, markdownMapper, children]);
+  
   return (
     <div 
       ref={containerRef} 
       onClick={handleMarkerClick}
     >
-      {children}
+      {content}
     </div>
   );
 });
