@@ -72,7 +72,22 @@ export class MarkdownMapper {
     let index = this.markdownSource.indexOf(searchText);
     
     if (index !== -1) {
-      return { start: index, end: index + searchText.length };
+      // Expand to include surrounding formatting characters if present,
+      // to return ACTUAL file positions that include markdown delimiters
+      let actualStart = index;
+      let actualEnd = index + searchText.length;
+      
+      // Look back for opening formatting
+      while (actualStart > 0 && this.isPartOfSameFormattingBlock(actualStart - 1)) {
+        actualStart--;
+      }
+      
+      // Look forward for closing formatting
+      while (actualEnd < this.markdownSource.length && this.isPartOfSameFormattingBlock(actualEnd)) {
+        actualEnd++;
+      }
+      
+      return { start: actualStart, end: actualEnd };
     }
     
     // If not found, the text might be split by formatting
