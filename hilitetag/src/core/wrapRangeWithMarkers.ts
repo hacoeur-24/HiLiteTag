@@ -107,14 +107,15 @@ export function wrapRangeWithMarkers(
   }
 
   // Phase 2: Wrap each collected node segment
-  // Find the first and last non-empty segment after trimming
+  // Find the first and last non-empty (non-whitespace) segment after trimming
   let firstNonEmptyIdx = -1;
   let lastNonEmptyIdx = -1;
   for (let i = 0; i < nodesToWrap.length; i++) {
     const { node, startOffset, endOffset } = nodesToWrap[i];
     const text = node.textContent || "";
     const middle = text.slice(startOffset, endOffset);
-    if (middle.length > 0) {
+    // Consider only segments that contain non-whitespace characters
+    if (middle.trim().length > 0) {
       if (firstNonEmptyIdx === -1) firstNonEmptyIdx = i;
       lastNonEmptyIdx = i;
     }
@@ -129,8 +130,8 @@ export function wrapRangeWithMarkers(
     const middle = text.slice(startOffset, endOffset);
     const after = text.slice(endOffset);
 
-    // Only wrap non-empty segments (avoid wrapping empty strings)
-    if (middle.length === 0) continue;
+    // Only wrap non-empty segments with non-whitespace content
+    if (middle.trim().length === 0) continue;
 
     const span = createMarkerElement();
 

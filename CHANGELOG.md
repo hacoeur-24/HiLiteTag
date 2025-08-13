@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.2] - 2025-08-13
+
+### Changed
+- Improved markers wrapping to avoid whitespaces
+
 ## [2.0.1] - 2025-08-11
 
 ### Changed
